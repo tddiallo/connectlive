@@ -53,20 +53,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policyBuilder =>
     {
-        var allowedOrigins = builder.Configuration["Security:AllowedOrigins"];
-        
-        if (string.IsNullOrEmpty(allowedOrigins))
-        {
-            // Default origins for local development
-            allowedOrigins = "http://localhost:3000;http://localhost:5000;http://localhost:5173";
-        }
-        
-        var origins = allowedOrigins.Split(";");
         policyBuilder
-            .WithOrigins(origins)
+            .AllowAnyOrigin()  // Temporary: allow all origins for testing
             .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+            .AllowAnyMethod();
+            // Note: AllowCredentials() cannot be used with AllowAnyOrigin()
     });
 });
 
