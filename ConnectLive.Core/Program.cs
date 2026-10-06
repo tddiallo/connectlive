@@ -40,6 +40,8 @@ builder.Services.AddScoped(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
 // builder.Services.AddAutoMapper(typeof(MappingProfile), typeof(ApplicationDbContext));
 //remplacer par l'utilisation de la configuration explicite de AutoMapper
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
+// AutoMapper 16 ne scanne plus le DI : les IValueResolver utilisés par les profils doivent être enregistrés.
+builder.Services.AddTransient<TokenResolver>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(MappingProfile).Assembly));
 
 builder.Services.AddMemoryCache();
