@@ -1,3 +1,4 @@
+using AutoMapper;
 using ConnectLive.Application;
 using ConnectLive.Application.Extensions;
 using ConnectLive.Core.Api.Configurations;
@@ -36,8 +37,9 @@ builder.Services.AddScoped(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
 
 // MassTransit/RabbitMQ disabled for local development - requires external RabbitMQ
 //builder.Services.AddBusPublisherRegistration(builder.Configuration);
-
-builder.Services.AddAutoMapper(typeof(MappingProfile), typeof(ApplicationDbContext));
+// builder.Services.AddAutoMapper(typeof(MappingProfile), typeof(ApplicationDbContext));
+//remplacer par l'utilisation de la configuration explicite de AutoMapper
+builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(MappingProfile).Assembly));
 
 builder.Services.AddMemoryCache();
