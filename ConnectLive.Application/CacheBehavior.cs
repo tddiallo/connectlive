@@ -4,6 +4,11 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace ConnectLive.Application;
+// cette classe implémente un comportement de pipeline pour la mise en cache des requêtes MediatR.
+// Il vérifie d'abord si la requête implémente l'interface ICachable<TResponse>.
+// Si c'est le cas, il tente de récupérer les données mises en cache.
+// Si les données ne sont pas trouvées ou ont expiré, il appelle le prochain gestionnaire de la requête(next),
+// met en cache le résultat et le retourne au demandeur au format approprié(exemple: JSON).
 public class CacheBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
@@ -14,6 +19,9 @@ public class CacheBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TR
         _cache = cache;
         _logger = logger;
     }
+
+     // cette méthode gère la logique de mise en cache pour les requêtes MediatR.
+     // on utilise le pattern de pipeline de MediatR pour intercepter les requêtes et gérer la mise en cache.
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
