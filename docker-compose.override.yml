@@ -14,6 +14,12 @@ services:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
 
+  redis:
+    restart: always
+    container_name: redis
+    ports:
+      - 6379:6379
+
   connectlive-db:
     restart: always
     container_name: connectlive-db
@@ -38,12 +44,14 @@ services:
     depends_on:
       - connectlive-db
       - rabbitmq
+      - redis
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - EventBusUsername=user
       - EventBusPassword=password
       - EventBusConnection=rabbitmq://rabbitmq:5672
+      - ConnectionStrings__Redis=redis:6379
     ports:
       - 8080:8080
 

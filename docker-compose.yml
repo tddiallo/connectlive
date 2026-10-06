@@ -15,6 +15,11 @@ services:
     networks:
        - backend
 
+  redis:
+    image: redis:7-alpine
+    networks:
+      - backend
+
   connectlive-db:
     image: postgres:16-alpine
     networks:

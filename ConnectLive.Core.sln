@@ -43,6 +43,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConnectLive.SPA", "..\Conne
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectLive.SPA.Infrastructure", "..\ConnectLive.SPA.Infrastructure\ConnectLive.SPA.Infrastructure.csproj", "{FBCFFBA7-7D63-4A8C-ABBD-E1CC82AC9D68}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectLive.Application.Tests", "ConnectLive.Application.Tests\ConnectLive.Application.Tests.csproj", "{CD227D94-9708-4203-80DC-215DDE3928F2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -128,6 +130,12 @@ Global
 		{FBCFFBA7-7D63-4A8C-ABBD-E1CC82AC9D68}.QA|Any CPU.Build.0 = Debug|Any CPU
 		{FBCFFBA7-7D63-4A8C-ABBD-E1CC82AC9D68}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FBCFFBA7-7D63-4A8C-ABBD-E1CC82AC9D68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD227D94-9708-4203-80DC-215DDE3928F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD227D94-9708-4203-80DC-215DDE3928F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD227D94-9708-4203-80DC-215DDE3928F2}.QA|Any CPU.ActiveCfg = QA|Any CPU
+		{CD227D94-9708-4203-80DC-215DDE3928F2}.QA|Any CPU.Build.0 = QA|Any CPU
+		{CD227D94-9708-4203-80DC-215DDE3928F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD227D94-9708-4203-80DC-215DDE3928F2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

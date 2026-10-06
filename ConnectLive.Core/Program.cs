@@ -44,7 +44,8 @@ builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 builder.Services.AddTransient<TokenResolver>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(MappingProfile).Assembly));
 
-builder.Services.AddMemoryCache();
+// Cache distribué (Redis si ConnectionStrings:Redis est défini, sinon mémoire locale)
+builder.Services.AddConnectLiveCaching(builder.Configuration);
 
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(WatchBehavior<,>));
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CacheBehavior<,>));

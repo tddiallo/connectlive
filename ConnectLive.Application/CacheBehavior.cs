@@ -1,74 +1,86 @@
-﻿using ConnectLive.Application.Interfaces;
+using System.Text.Json;
+using ConnectLive.Application.Interfaces;
 using MediatR;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 
 namespace ConnectLive.Application;
-// cette classe implémente un comportement de pipeline pour la mise en cache des requêtes MediatR.
-// Il vérifie d'abord si la requête implémente l'interface ICachable<TResponse>.
-// Si c'est le cas, il tente de récupérer les données mises en cache.
-// Si les données ne sont pas trouvées ou ont expiré, il appelle le prochain gestionnaire de la requête(next),
-// met en cache le résultat et le retourne au demandeur au format approprié(exemple: JSON).
+
+/// <summary>
+/// Comportement de pipeline MediatR qui met en cache la réponse des requêtes implémentant
+/// <see cref="ICachable{TEntity}"/>.
+/// </summary>
+/// <remarks>
+/// Le cache est <see cref="IDistributedCache"/> : Redis quand <c>ConnectionStrings:Redis</c> est configuré,
+/// sinon un cache mémoire de process (voir <c>CachingExtensions</c> dans l'API). Les réponses sont sérialisées
+/// en JSON, elles doivent donc être sérialisables par <c>System.Text.Json</c>.
+/// Flux : requête non cachable ou <c>Expiration &lt;= 0</c> → handler direct ; sinon lecture du cache,
+/// et en cas d'absence (ou d'entrée illisible) appel du handler puis écriture avec expiration glissante.
+/// </remarks>
 public class CacheBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    private readonly IMemoryCache _cache;
+    private readonly IDistributedCache _cache;
     private readonly ILogger<CacheBehavior<TRequest, TResponse>> _logger;
-    public CacheBehavior(IMemoryCache cache, ILogger<CacheBehavior<TRequest, TResponse>> logger)
+
+    public CacheBehavior(IDistributedCache cache, ILogger<CacheBehavior<TRequest, TResponse>> logger)
     {
         _cache = cache;
         _logger = logger;
     }
 
-     // cette méthode gère la logique de mise en cache pour les requêtes MediatR.
-     // on utilise le pattern de pipeline de MediatR pour intercepter les requêtes et gérer la mise en cache.
-
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        if (!request.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICachable<>)))
+        if (request is not ICachable<TResponse> cacheRequest || cacheRequest.Expiration <= 0)
             return await next();
 
-        var cacheRequest = request as ICachable<TResponse>;
-        if(cacheRequest?.Expiration <= 0)
+        var cachedBytes = await _cache.GetAsync(cacheRequest.Key, cancellationToken);
+        if (cachedBytes is not null && TryDeserialize(cachedBytes, cacheRequest.Key, out var cachedData))
         {
-            return await next();
+            _logger.LogInformation("[{CommandName}][Cache] Pulled data from cache for key:[{Key}].",
+                typeof(TRequest).Name, cacheRequest.Key);
+            return cachedData;
         }
 
-        if (_cache.TryGetValue(cacheRequest.Key, out TResponse cachedData))
+        _logger.LogInformation("[{CommandName}][Cache] Data not found or expired for key:[{Key}].",
+            typeof(TRequest).Name, cacheRequest.Key);
+
+        var response = await next();
+
+        var options = new DistributedCacheEntryOptions
         {
-            _logger.LogInformation(">>>>>>>[{commandName}][Cache] Pulled data from cache for key:[{key}]."
-                , typeof(TRequest).Name, cacheRequest.Key);
+            SlidingExpiration = TimeSpan.FromSeconds(cacheRequest.Expiration)
+        };
+        await _cache.SetAsync(cacheRequest.Key, JsonSerializer.SerializeToUtf8Bytes(response), options, cancellationToken);
 
-        }
-        else
+        _logger.LogInformation("[{CommandName}][Cache] Cache set [{Key}] for {Expiration} seconds.",
+            typeof(TRequest).Name, cacheRequest.Key, cacheRequest.Expiration);
+
+        return response;
+    }
+
+    /// <summary>
+    /// Désérialise une entrée de cache. Une entrée illisible (changement de schéma, corruption) est traitée
+    /// comme un « miss » pour que le handler reconstruise la valeur plutôt que de faire échouer la requête.
+    /// </summary>
+    private bool TryDeserialize(byte[] bytes, string key, out TResponse value)
+    {
+        try
         {
-            _logger.LogInformation(">>>>>>>[{commandName}][Cache] Data not found or expired for Key:[{key}]."
-                , typeof(TRequest).Name, cacheRequest.Key);
-
-            cachedData = await next();
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetSlidingExpiration(TimeSpan.FromSeconds(cacheRequest.Expiration))
-                .SetSize(1)
-                .SetPriority(CacheItemPriority.Low);
-
-            _cache.Set(cacheRequest.Key, cachedData, cacheOptions);
-
-            _logger.LogInformation(">>>>>>>[{commandName}][Cache] Cache Set [{key}] for '{cacheRequest.Expiration}' seconds."
-               , typeof(TRequest).Name, cacheRequest.Key, cacheRequest.Expiration);
+            var deserialized = JsonSerializer.Deserialize<TResponse>(bytes);
+            if (deserialized is not null)
+            {
+                value = deserialized;
+                return true;
+            }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "[{CommandName}][Cache] Unreadable cache entry for key:[{Key}], ignoring it.",
+                typeof(TRequest).Name, key);
         }
 
-
-        //ScoreQuery
-        //InstructionQuery
-        //.....
-
-        //Switch Case...(User, Instruction, ...) // <<<< Session
-        //ICache <<< CQ that implements it's we will use this mechanism.
-        //
-        //2- If we have a cache, we return it.
-        //3- If we don't have a cache, we fetch the data
-        //4- Save it to the cache.
-
-        return cachedData;
+        value = default!;
+        return false;
     }
 }

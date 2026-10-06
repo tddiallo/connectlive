@@ -68,7 +68,7 @@ flowchart LR
 | **RabbitMQ + MassTransit** | ✅ câblé, 🔜 pas encore utilisé en pratique | Communication événementielle découplée entre services |
 | **Hangfire** | ✅ câblé (désactivé en local dev) | Jobs différés/planifiés (email, newsletter) stockés en PostgreSQL |
 | **Seq + Serilog** | ✅ câblé sur 2 des 3 services | Logs structurés centralisés, interrogeables |
-| **Redis** | 🔜 **prévu, pas encore dans le code** | Cache distribué (remplacerait `IMemoryCache`), et futur état partagé des sessions live |
+| **Redis** | ✅ câblé (`IDistributedCache`, repli mémoire si non configuré) — voir [docs/REDIS-CACHE.md](docs/REDIS-CACHE.md) | Cache distribué des requêtes MediatR, futur état partagé des sessions live |
 
 ## Base de données
 
