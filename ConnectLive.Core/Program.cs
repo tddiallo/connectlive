@@ -12,6 +12,8 @@ using ConnectLive.Core.Api.Filters;
 using Connectlive.Proxy;
 using ConnectLive.Core.Api.Extensions;
 using ConnectLive.Core.Api;
+using ConnectLive.Core.Api.Realtime;
+using ConnectLive.Portal.Shared.Realtime;
 
 //var builder = WebApplication.CreateBuilder(args);
 var builder = HostExtensions.CreateWebHostBuilder<ClassInfo>(args);
@@ -43,6 +45,11 @@ builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 // AutoMapper 16 ne scanne plus le DI : les IValueResolver utilisés par les profils doivent être enregistrés.
 builder.Services.AddTransient<TokenResolver>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(MappingProfile).Assembly));
+
+// Temps réel : hub SignalR des sessions, suivi de présence (singleton) et notifier injectable
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<SessionPresenceTracker>();
+builder.Services.AddSingleton<ISessionNotifier, SignalRSessionNotifier>();
 
 // Cache distribué (Redis si ConnectionStrings:Redis est défini, sinon mémoire locale)
 builder.Services.AddConnectLiveCaching(builder.Configuration);
@@ -94,5 +101,6 @@ app.UseAuthorization();
 
 app.UseCustomException();
 app.MapControllers();
+app.MapHub<SessionHub>(SessionHubEvents.HubPath);
 
 app.Run();

@@ -98,7 +98,7 @@ flowchart LR
 
 🔜 **Prévu / à construire** (détail dans le [sprint planning](https://claude.ai/artifact/AHdiWMRQMd6TSDx79DCfFU))
 - Cache distribué avec **Redis**
-- Sessions de quiz en **temps réel** (SignalR) — le cœur du produit "Live"
+- Sessions de quiz en **temps réel** : hub SignalR ✅ ([docs/SIGNALR-REALTIME.md](docs/SIGNALR-REALTIME.md)), reste à brancher la logique métier
 - Questions / Sessions / Leaderboard : logique métier réelle (aujourd'hui stubbée)
 - Authentification (JWT ou OIDC) — aucune aujourd'hui
 - Tests automatisés (0 test dans la solution actuellement) + CI/CD
