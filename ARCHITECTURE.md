@@ -31,7 +31,7 @@ flowchart LR
         direction TB
         T1["Users ✅"]
         T2["Questions ✅"]
-        T3["Sessions 🔜"]
+        T3["Sessions ✅"]
         T4["Leaderboard 🔜"]
     end
 
@@ -73,8 +73,8 @@ flowchart LR
 ## Base de données
 
 - **EF Core Code-First**, un seul `DbContext` (`ApplicationDbContext`)
-- Tables actives : `Users`, `Questions`
-- Tables prévues mais pas encore persistées : `Sessions`, `Leaderboard` (modèles du domaine existants, `DbSet` commentés)
+- Tables actives : `Users`, `Questions`, `Sessions`, `Session_questions`
+- Table prévue mais pas encore persistée : `Leaderboard` (modèles du domaine existants, `DbSet` commentés)
 - SQLite en local dev (zéro dépendance externe) ; PostgreSQL via Docker Compose pour la prod / pour Hangfire
 
 ---
@@ -98,7 +98,7 @@ flowchart LR
 
 🔜 **Prévu / à construire** (détail dans le [sprint planning](https://claude.ai/artifact/AHdiWMRQMd6TSDx79DCfFU))
 - Cache distribué avec **Redis**
-- Sessions de quiz en **temps réel** : hub SignalR ✅ ([docs/SIGNALR-REALTIME.md](docs/SIGNALR-REALTIME.md)), reste à brancher la logique métier
+- Sessions de quiz en **temps réel** : hub SignalR ✅ ([docs/SIGNALR-REALTIME.md](docs/SIGNALR-REALTIME.md)), cycle de vie des sessions branché ([docs/SESSIONS.md](docs/SESSIONS.md)) ; restent réponses des joueurs et classement
 - Questions / Sessions / Leaderboard : logique métier réelle (aujourd'hui stubbée)
 - Authentification (JWT ou OIDC) — aucune aujourd'hui
 - Tests automatisés (0 test dans la solution actuellement) + CI/CD

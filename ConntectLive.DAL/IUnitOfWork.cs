@@ -5,6 +5,7 @@ public interface IUnitOfWork
     
     IGenericRepository<UserEntity> Users { get; set; }
     IGenericRepository<QuestionEntity> Questions { get; set; }
+    IGenericRepository<SessionEntity> Sessions { get; set; }
 }
 
 

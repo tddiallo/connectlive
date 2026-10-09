@@ -49,6 +49,7 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(Map
 // Temps réel : hub SignalR des sessions, suivi de présence (singleton) et notifier injectable
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<SessionPresenceTracker>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ISessionNotifier, SignalRSessionNotifier>();
 
 // Cache distribué (Redis si ConnectionStrings:Redis est défini, sinon mémoire locale)

@@ -7,6 +7,7 @@ public class UnitOfWork(ApplicationDbContext context, IServiceProvider servicePr
     private readonly ApplicationDbContext _context = context;
     public IGenericRepository<UserEntity> Users { get; set; } = serviceProvider.GetRequiredService<IGenericRepository<UserEntity>>();
     public IGenericRepository<QuestionEntity> Questions { get; set; } = serviceProvider.GetRequiredService<IGenericRepository<QuestionEntity>>();
+    public IGenericRepository<SessionEntity> Sessions { get; set; } = serviceProvider.GetRequiredService<IGenericRepository<SessionEntity>>();
 
     public void Commit()
     {

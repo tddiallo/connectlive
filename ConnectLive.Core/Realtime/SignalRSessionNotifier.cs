@@ -14,7 +14,7 @@ public sealed class SignalRSessionNotifier : ISessionNotifier
         _hubContext = hubContext;
     }
 
-    public Task NotifyQuestionChangedAsync(string sessionId, QuestionModel question, CancellationToken cancellationToken = default) =>
+    public Task NotifyQuestionChangedAsync(string sessionId, SessionQuestionDto question, CancellationToken cancellationToken = default) =>
         SendToSession(sessionId, SessionHubEvents.QuestionChanged, question, cancellationToken);
 
     public Task NotifyLeaderboardUpdatedAsync(string sessionId, IReadOnlyList<LeaderboardModel> leaderboard, CancellationToken cancellationToken = default) =>

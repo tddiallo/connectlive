@@ -23,7 +23,7 @@ public class SignalRSessionNotifierTests
     [Fact]
     public async Task NotifyQuestionChangedAsync_SendsQuestionToSessionGroup()
     {
-        var question = new QuestionModel { QuestionId = Guid.NewGuid(), Question = "2+2 ?" };
+        var question = new SessionQuestionDto(Guid.NewGuid(), "2+2 ?", "Maths", new[] { "3", "4" }, 0, 5);
 
         await _notifier.NotifyQuestionChangedAsync("s1", question);
 

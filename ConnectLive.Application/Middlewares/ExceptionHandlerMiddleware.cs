@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using ConnectLive.Domain.Exceptions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Net;
@@ -42,6 +43,7 @@ public class ExceptionHandlerMiddleware
         {
             UnauthorizedAccessException => HttpStatusCode.Unauthorized,
             KeyNotFoundException => HttpStatusCode.NotFound,
+            ConflictException => HttpStatusCode.Conflict,
             ArgumentException => HttpStatusCode.BadRequest,
             _ => HttpStatusCode.InternalServerError
         };
@@ -49,7 +51,8 @@ public class ExceptionHandlerMiddleware
         await SendExceptionToAdmin(exception);
 
         // Never echo raw exception details to the client outside Development: that leaks internals.
-        var message = _environment.IsDevelopment()
+        var isExpected = (int)code < 500;
+        var message = _environment.IsDevelopment() || isExpected
             ? exception.InnerException?.Message ?? exception.Message
             : "An unexpected error occurred.";
 

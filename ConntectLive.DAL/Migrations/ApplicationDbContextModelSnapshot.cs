@@ -15,7 +15,7 @@ namespace ConntectLive.DAL.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
 
             modelBuilder.Entity("ConntectLive.DAL.QuestionEntity", b =>
                 {
@@ -28,7 +28,7 @@ namespace ConntectLive.DAL.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("category");
 
-                    b.Property<string>("Choices")
+                    b.PrimitiveCollection<string>("Choices")
                         .HasColumnType("TEXT")
                         .HasColumnName("choices");
 
@@ -51,6 +51,89 @@ namespace ConntectLive.DAL.Migrations
                     b.HasIndex("UserEntityId");
 
                     b.ToTable("questions");
+                });
+
+            modelBuilder.Entity("ConntectLive.DAL.SessionEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("created-at");
+
+                    b.Property<int>("CurrentQuestionIndex")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("current-question-index");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ended-at");
+
+                    b.Property<Guid>("HostUserId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("host-user-id");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("started-at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("title");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("sessions");
+                });
+
+            modelBuilder.Entity("ConntectLive.DAL.SessionQuestionEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("order");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("question-id");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("session-id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "Order")
+                        .IsUnique();
+
+                    b.ToTable("session_questions");
                 });
 
             modelBuilder.Entity("ConntectLive.DAL.UserEntity", b =>
@@ -89,6 +172,20 @@ namespace ConntectLive.DAL.Migrations
                     b.HasOne("ConntectLive.DAL.UserEntity", null)
                         .WithMany("Questions")
                         .HasForeignKey("UserEntityId");
+                });
+
+            modelBuilder.Entity("ConntectLive.DAL.SessionQuestionEntity", b =>
+                {
+                    b.HasOne("ConntectLive.DAL.SessionEntity", null)
+                        .WithMany("Questions")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ConntectLive.DAL.SessionEntity", b =>
+                {
+                    b.Navigation("Questions");
                 });
 
             modelBuilder.Entity("ConntectLive.DAL.UserEntity", b =>

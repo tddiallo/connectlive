@@ -22,6 +22,7 @@ Avec Visual Studio : ouvrir `ConnectLive.Core.sln` et choisir un profil multi-pr
 |---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Vue d'ensemble, couches, état des fonctionnalités |
 | [docs/DEVELOPPEMENT-VISUAL-STUDIO.md](docs/DEVELOPPEMENT-VISUAL-STUDIO.md) | Profils de démarrage multi-projet, dépendances Docker, dépannage |
+| [docs/SESSIONS.md](docs/SESSIONS.md) | Sessions de quiz : conception, machine à états, API |
 | [docs/REDIS-CACHE.md](docs/REDIS-CACHE.md) | Cache distribué des requêtes MediatR |
 | [docs/SIGNALR-REALTIME.md](docs/SIGNALR-REALTIME.md) | Hub de sessions temps réel et contrat client |
 | [docs/PLAN-REDIS-SIGNALR.md](docs/PLAN-REDIS-SIGNALR.md) | Plan initial Redis + SignalR |

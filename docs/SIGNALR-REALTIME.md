@@ -34,7 +34,7 @@ Méthodes serveur (appelées par le client) :
 | `JoinSession(sessionId, userId)` | Entre dans le groupe, diffuse `UserJoined` | Participants connectés |
 | `LeaveSession(sessionId)` | Sort du groupe, diffuse `UserLeft` | — |
 
-Événements (reçus par le client) : `UserJoined(userId)`, `UserLeft(userId)`, `QuestionChanged(QuestionModel)`,
+Événements (reçus par le client) : `UserJoined(userId)`, `UserLeft(userId)`, `QuestionChanged(SessionQuestionDto)` (jamais la bonne réponse),
 `LeaderboardUpdated(LeaderboardModel[])`, `SessionEnded(sessionId)`.
 
 Une déconnexion brutale (onglet fermé, réseau coupé) déclenche automatiquement `UserLeft`.
@@ -52,7 +52,8 @@ var participants = await connection.InvokeAsync<string[]>("JoinSession", session
 
 ```csharp
 // injecter ISessionNotifier (singleton) puis :
-await _notifier.NotifyQuestionChangedAsync(sessionId, question, cancellationToken);
+await _notifier.NotifyQuestionChangedAsync(sessionId, questionDto, cancellationToken);
+// Le cycle de vie complet (start/next/end) est déjà branché : voir docs/SESSIONS.md
 ```
 
 ## Sécurité et limites connues
