@@ -10,6 +10,8 @@ services:
       - 8199:80
 
   rabbitmq:
+    ports:
+      - "5672:5672"
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password

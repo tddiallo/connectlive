@@ -1,0 +1,52 @@
+[
+  {
+    "Name": "1 - Local : API + SPA (sans dépendances)",
+    "Projects": [
+      {
+        "Path": "ConnectLive.Core\\ConnectLive.Core.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      },
+      {
+        "Path": "..\\ConnectLive.SPA\\ConnectLive.SPA.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      }
+    ]
+  },
+  {
+    "Name": "2 - Local : API seule",
+    "Projects": [
+      {
+        "Path": "ConnectLive.Core\\ConnectLive.Core.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      }
+    ]
+  },
+  {
+    "Name": "3 - Stack complète (dépendances Docker)",
+    "Projects": [
+      {
+        "Path": "ConnectLive.Core\\ConnectLive.Core.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "local-infra"
+      },
+      {
+        "Path": "ConnectLive.Notification.Api\\ConnectLive.Notification.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "local-infra"
+      },
+      {
+        "Path": "ConnectLive.Newsletter.Api\\ConnectLive.Newsletter.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "local-infra"
+      },
+      {
+        "Path": "..\\ConnectLive.SPA\\ConnectLive.SPA.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      }
+    ]
+  }
+]
