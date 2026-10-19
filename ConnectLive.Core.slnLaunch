@@ -1,6 +1,6 @@
 [
   {
-    "Name": "1 - Local : API + SPA (sans dépendances)",
+    "Name": "1 - Local : API + SPA (Postgres Docker requis)",
     "Projects": [
       {
         "Path": "ConnectLive.Core\\ConnectLive.Core.Api.csproj",
@@ -15,7 +15,7 @@
     ]
   },
   {
-    "Name": "2 - Local : API seule",
+    "Name": "2 - Local : API seule (Postgres Docker requis)",
     "Projects": [
       {
         "Path": "ConnectLive.Core\\ConnectLive.Core.Api.csproj",

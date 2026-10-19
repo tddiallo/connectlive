@@ -26,15 +26,19 @@ public sealed class SessionTransition
     }
 
     /// <param name="sessionId">Session à modifier.</param>
+    /// <param name="requesterId">Utilisateur authentifié ; doit être l'animateur de la session.</param>
     /// <param name="transition">Applique la règle de domaine ; renvoie <c>true</c> si une question est (toujours) courante.</param>
     /// <exception cref="KeyNotFoundException">Session inconnue (404).</exception>
+    /// <exception cref="ForbiddenException">L'appelant n'est pas l'animateur de la session (403).</exception>
     /// <exception cref="ConflictException">Transition interdite ou modification concurrente (409).</exception>
-    public async Task<SessionResponse> ExecuteAsync(Guid sessionId, Func<SessionEntity, DateTime, bool> transition, CancellationToken cancellationToken)
+    public async Task<SessionResponse> ExecuteAsync(Guid sessionId, Guid requesterId, Func<SessionEntity, DateTime, bool> transition, CancellationToken cancellationToken)
     {
         var session = await _dbContext.GetSessionOrThrowAsync(sessionId, cancellationToken);
+        if (session.HostUserId != requesterId)
+            throw new ForbiddenException("Only the session host can control this session.");
 
         var hasCurrentQuestion = transition(session, _timeProvider.GetUtcNow().UtcDateTime);
-        Commit();
+        await CommitAsync(cancellationToken);
 
         // Notification après la persistance : l'état en base fait foi, un client peut toujours se resynchroniser.
         var channel = session.Id.ToString();
@@ -46,11 +50,11 @@ public sealed class SessionTransition
         return session.ToResponse();
     }
 
-    private void Commit()
+    private async Task CommitAsync(CancellationToken cancellationToken)
     {
         try
         {
-            _unitOfWork.Commit();
+            await _unitOfWork.CommitAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException)
         {

@@ -1,7 +1,4 @@
 ﻿using ConnectLive.Application.BusEvents;
-using MassTransit;
-using MassTransit.Configuration;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Serilog;
 using System.Net;
 
@@ -44,31 +41,5 @@ public static class HostExtensions
            .CreateLogger();
 
         return builder;
-    }
-
-    public static IServiceCollection AddBusPublisherRegistration(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddMassTransit(x =>
-        {
-            x.AddBus(provider => Configure(configuration, (cfg) =>
-            {
-            }));
-        });
-
-        return services;
-    }
-
-    public static IBusControl Configure(IConfiguration configuration, Action<IRabbitMqBusFactoryConfigurator> registrationAction = null)
-    {
-        var connection = configuration["EventBusConnection"];
-        return Bus.Factory.CreateUsingRabbitMq(cfg =>
-        {
-            cfg.Host(connection, h =>
-            {
-                h.Username(configuration["EventBusUserName"]);
-                h.Password(configuration["EventBusPassword"]);
-            });
-            registrationAction?.Invoke(cfg);
-        });
     }
 }

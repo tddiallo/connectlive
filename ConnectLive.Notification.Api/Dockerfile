@@ -12,9 +12,6 @@ WORKDIR /src
 COPY ["ConnectLive.Core/ConnectLive.Notification.Api/ConnectLive.Notification.Api.csproj", "ConnectLive.Core/ConnectLive.Notification.Api/"]
 COPY ["ConnectLive.Core/ConnectLive.Application/ConnectLive.Application.csproj", "ConnectLive.Core/ConnectLive.Application/"]
 COPY ["ConnectLive.Core/ConnectLive.Domain/ConnectLive.Domain.csproj", "ConnectLive.Core/ConnectLive.Domain/"]
-COPY ["Connectlive.WebHosting/Connectlive.WebHosting.csproj", "Connectlive.WebHosting/"]
-COPY ["WebHostExtensions/WebHostExtensions.csproj", "WebHostExtensions/"]
-COPY ["Workers/Workers.csproj", "Workers/"]
 RUN dotnet restore "ConnectLive.Core/ConnectLive.Notification.Api/ConnectLive.Notification.Api.csproj"
 COPY . .
 WORKDIR "/src/ConnectLive.Core/ConnectLive.Notification.Api"

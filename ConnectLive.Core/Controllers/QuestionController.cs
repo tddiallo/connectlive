@@ -1,36 +1,45 @@
-﻿using ConnectLive.Portal.Shared;
+﻿using ConnectLive.Core.Api.Auth;
+using ConnectLive.Portal.Shared;
 using ConnectLive.Portal.Shared.Request.Questions;
 using ConnectLive.Portal.Shared.Response.Questions;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using static ConnectLive.Core.Api.Commands.QuestionCommands;
+using static ConnectLive.Core.Api.Queries.QuestionQueries;
 
 namespace ConnectLive.Core.Controllers;
+
+/// <summary>
+/// Questions de l'animateur (voir docs/QUESTIONS-REPONSES.md). Chaque utilisateur ne voit que les siennes.
+/// </summary>
 [ApiController]
+[Authorize]
 [Route("[controller]")]
 public class QuestionController : ControllerBase
 {
-    [HttpGet]
-    [Route("all")]
-    public async Task<IActionResult> GetQuestions(Guid sessionId)
+    private readonly IMediator _mediator;
+
+    public QuestionController(IMediator mediator)
     {
-        var mock = new List<CreateQuestionResponse>();
-        for(int  i = 0; i < 100; i++)
-        {
-            mock.Add(new CreateQuestionResponse
-            {
-                Question = $"Question {i}",
-                Choice1 = $"Choice 1",
-                Choice2 = $"Choice 2",
-                Choice3 = $"Choice 3",
-                Choice4 = $"Choice 4"
-            });
-        }
-        return Ok(await Result<List<CreateQuestionResponse>>.SuccessAsync(mock));
+        _mediator = mediator;
     }
 
+    /// <summary>Questions créées par l'utilisateur authentifié (avec leur bonne réponse).</summary>
+    [HttpGet]
+    [Route("all")]
+    public async Task<IActionResult> GetQuestions(CancellationToken cancellationToken)
+    {
+        var questions = await _mediator.Send(new GetMyQuestionsQuery(User.GetUserId()), cancellationToken);
+        return Ok(Result<List<CreateQuestionResponse>>.Success(questions));
+    }
+
+    /// <summary>Crée une question ; l'appelant en est l'auteur. 400 si la demande est invalide.</summary>
     [HttpPost]
     [Route("save")]
-    public async Task<IActionResult> SaveQuestion(CreateQuestionRequest request)
+    public async Task<IActionResult> SaveQuestion(CreateQuestionRequest request, CancellationToken cancellationToken)
     {
-        return Ok(await Result<bool>.SuccessAsync(true, "Question saved successfully!"));
+        var created = await _mediator.Send(new CreateQuestionCommand(request, User.GetUserId()), cancellationToken);
+        return Ok(Result<CreateQuestionResponse>.Success(created, "Question saved successfully!"));
     }
 }

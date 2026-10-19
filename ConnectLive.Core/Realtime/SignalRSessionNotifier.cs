@@ -1,4 +1,3 @@
-using ConnectLive.Domain.Model;
 using ConnectLive.Portal.Shared.Realtime;
 using Microsoft.AspNetCore.SignalR;
 
@@ -17,7 +16,7 @@ public sealed class SignalRSessionNotifier : ISessionNotifier
     public Task NotifyQuestionChangedAsync(string sessionId, SessionQuestionDto question, CancellationToken cancellationToken = default) =>
         SendToSession(sessionId, SessionHubEvents.QuestionChanged, question, cancellationToken);
 
-    public Task NotifyLeaderboardUpdatedAsync(string sessionId, IReadOnlyList<LeaderboardModel> leaderboard, CancellationToken cancellationToken = default) =>
+    public Task NotifyLeaderboardUpdatedAsync(string sessionId, IReadOnlyList<LeaderboardEntryDto> leaderboard, CancellationToken cancellationToken = default) =>
         SendToSession(sessionId, SessionHubEvents.LeaderboardUpdated, leaderboard, cancellationToken);
 
     public Task NotifySessionEndedAsync(string sessionId, CancellationToken cancellationToken = default) =>

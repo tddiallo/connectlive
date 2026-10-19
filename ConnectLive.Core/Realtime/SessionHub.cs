@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using ConnectLive.Portal.Shared.Realtime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace ConnectLive.Core.Api.Realtime;
@@ -10,12 +11,13 @@ namespace ConnectLive.Core.Api.Realtime;
 /// Le hub ne gère que la présence : les événements métier (question, classement) sont poussés côté serveur
 /// via <see cref="ISessionNotifier"/>.
 /// </summary>
+[Authorize]
 public partial class SessionHub : Hub
 {
     private const int MaxIdLength = 64;
-    private readonly SessionPresenceTracker _tracker;
+    private readonly ISessionPresenceTracker _tracker;
 
-    public SessionHub(SessionPresenceTracker tracker)
+    public SessionHub(ISessionPresenceTracker tracker)
     {
         _tracker = tracker;
     }
@@ -24,20 +26,23 @@ public partial class SessionHub : Hub
     public static string GroupName(string sessionId) => $"session:{sessionId}";
 
     /// <summary>
-    /// Rejoint la session et notifie les autres participants.
+    /// Rejoint la session et notifie les autres participants. L'identité du participant est celle du jeton
+    /// (<c>sub</c>) : le client ne peut pas se faire passer pour un autre utilisateur.
     /// </summary>
     /// <returns>Les participants actuellement connectés (incluant l'appelant).</returns>
-    /// <exception cref="HubException">Identifiant de session ou d'utilisateur invalide.</exception>
-    public async Task<IReadOnlyCollection<string>> JoinSession(string sessionId, string userId)
+    /// <exception cref="HubException">Identifiant de session invalide ou connexion sans identité.</exception>
+    public async Task<IReadOnlyCollection<string>> JoinSession(string sessionId)
     {
         EnsureValidId(sessionId, nameof(sessionId));
-        EnsureValidId(userId, nameof(userId));
+        var userId = Context.UserIdentifier;
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new HubException("Authentication required.");
 
         await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(sessionId));
-        _tracker.Join(Context.ConnectionId, sessionId, userId);
+        await _tracker.JoinAsync(Context.ConnectionId, sessionId, userId);
         await Clients.Group(GroupName(sessionId)).SendAsync(SessionHubEvents.UserJoined, userId);
 
-        return _tracker.GetParticipants(sessionId);
+        return await _tracker.GetParticipantsAsync(sessionId);
     }
 
     /// <summary>Quitte la session et notifie les autres participants.</summary>
@@ -47,13 +52,13 @@ public partial class SessionHub : Hub
         EnsureValidId(sessionId, nameof(sessionId));
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(sessionId));
-        await NotifyLeftAsync(_tracker.Leave(Context.ConnectionId));
+        await NotifyLeftAsync(await _tracker.LeaveAsync(Context.ConnectionId));
     }
 
     /// <summary>Une déconnexion brutale (onglet fermé, perte réseau) équivaut à un départ de session.</summary>
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        await NotifyLeftAsync(_tracker.Leave(Context.ConnectionId));
+        await NotifyLeftAsync(await _tracker.LeaveAsync(Context.ConnectionId));
         await base.OnDisconnectedAsync(exception);
     }
 

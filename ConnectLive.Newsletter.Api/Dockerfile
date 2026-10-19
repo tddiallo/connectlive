@@ -10,8 +10,6 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["ConnectLive.Core/ConnectLive.Newsletter.Api/ConnectLive.Newsletter.Api.csproj", "ConnectLive.Core/ConnectLive.Newsletter.Api/"]
-COPY ["WebHostExtensions/WebHostExtensions.csproj", "WebHostExtensions/"]
-COPY ["Workers/Workers.csproj", "Workers/"]
 RUN dotnet restore "ConnectLive.Core/ConnectLive.Newsletter.Api/ConnectLive.Newsletter.Api.csproj"
 COPY . .
 WORKDIR "/src/ConnectLive.Core/ConnectLive.Newsletter.Api"

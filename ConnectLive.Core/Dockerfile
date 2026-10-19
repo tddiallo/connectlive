@@ -14,10 +14,6 @@ COPY ["ConnectLive.Core/ConnectLive.Application/ConnectLive.Application.csproj",
 COPY ["ConnectLive.Core/ConnectLive.Domain/ConnectLive.Domain.csproj", "ConnectLive.Core/ConnectLive.Domain/"]
 COPY ["ConnectLive.Core/ConntectLive.DAL/ConntectLive.DAL.csproj", "ConnectLive.Core/ConntectLive.DAL/"]
 COPY ["ConnectLive.Core/ConnectLive.Portal.Shared/ConnectLive.Portal.Shared.csproj", "ConnectLive.Core/ConnectLive.Portal.Shared/"]
-COPY ["Connectlive.Proxy/Connectlive.Proxy.csproj", "Connectlive.Proxy/"]
-COPY ["Connectlive.WebHosting/Connectlive.WebHosting.csproj", "Connectlive.WebHosting/"]
-COPY ["WebHostExtensions/WebHostExtensions.csproj", "WebHostExtensions/"]
-COPY ["Workers/Workers.csproj", "Workers/"]
 RUN dotnet restore "ConnectLive.Core/ConnectLive.Core/ConnectLive.Core.Api.csproj"
 COPY . .
 WORKDIR "/src/ConnectLive.Core/ConnectLive.Core"

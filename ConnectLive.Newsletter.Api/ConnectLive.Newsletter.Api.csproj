@@ -17,7 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Workers\Workers.csproj" />
   </ItemGroup>
 
 </Project>

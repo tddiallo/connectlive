@@ -1,28 +1,19 @@
-﻿namespace ConntectLive.DAL;
+namespace ConntectLive.DAL;
+
+/// <summary>
+/// Accès générique à une entité. Les écritures ne sont persistées qu'au <see cref="IUnitOfWork.CommitAsync"/>.
+/// Pour les lectures filtrées, projetées ou paginées, utiliser <see cref="Query"/> (LINQ, traduit en SQL).
+/// </summary>
 public interface IGenericRepository<TEntity> where TEntity : class, IEntity
 {
-    Task<TEntity> GetByIdAsync(Guid id);
-    Task<IQueryable<TEntity>> GetAll();
-    Task AddAsync(TEntity entity);
-    Task Update(TEntity entity);
-    Task<bool> Delete(TEntity entity);
-}
+    Task<TEntity> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-#region Old way / long way
-public interface IUserRepository
-{
-    UserEntity GetById(Guid id);
-    void Add(UserEntity entity);
-    void Update(UserEntity entity);
-    bool Delete(UserEntity entity);
-}
+    /// <summary>Requête en lecture seule (sans suivi des modifications).</summary>
+    IQueryable<TEntity> Query();
 
-public interface IQuestionRepository
-{
-    QuestionEntity GetById(Guid id);
-    void Add(UserEntity entity);
-    void Update(UserEntity entity);
-    bool Delete(UserEntity entity);
-}
+    Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
 
-#endregion
+    void Update(TEntity entity);
+
+    void Remove(TEntity entity);
+}

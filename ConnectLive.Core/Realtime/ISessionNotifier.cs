@@ -1,4 +1,3 @@
-using ConnectLive.Domain.Model;
 using ConnectLive.Portal.Shared.Realtime;
 
 namespace ConnectLive.Core.Api.Realtime;
@@ -13,7 +12,7 @@ public interface ISessionNotifier
     Task NotifyQuestionChangedAsync(string sessionId, SessionQuestionDto question, CancellationToken cancellationToken = default);
 
     /// <summary>Diffuse le classement à jour.</summary>
-    Task NotifyLeaderboardUpdatedAsync(string sessionId, IReadOnlyList<LeaderboardModel> leaderboard, CancellationToken cancellationToken = default);
+    Task NotifyLeaderboardUpdatedAsync(string sessionId, IReadOnlyList<LeaderboardEntryDto> leaderboard, CancellationToken cancellationToken = default);
 
     /// <summary>Annonce la fin de la session.</summary>
     Task NotifySessionEndedAsync(string sessionId, CancellationToken cancellationToken = default);

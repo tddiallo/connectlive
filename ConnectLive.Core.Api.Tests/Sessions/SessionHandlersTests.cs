@@ -21,6 +21,7 @@ public sealed class SessionHandlersTests : IDisposable
     private readonly ISessionNotifier _notifier = Substitute.For<ISessionNotifier>();
     private readonly ServiceProvider _services;
     private readonly List<QuestionEntity> _questions;
+    private readonly Guid _hostId = Guid.NewGuid();
 
     public SessionHandlersTests()
     {
@@ -64,9 +65,9 @@ public sealed class SessionHandlersTests : IDisposable
             new CreateSessionCommand(new CreateSessionRequest
             {
                 Title = "Quiz",
-                HostUserId = Guid.NewGuid(),
+                HostUserId = Guid.NewGuid(), // ignoré : l'hôte est _hostId
                 QuestionIds = _questions.Take(questionCount).Select(q => q.Id).ToList()
-            }), CancellationToken.None));
+            }, _hostId), CancellationToken.None));
 
     #region Create
     [Fact]
@@ -93,7 +94,7 @@ public sealed class SessionHandlersTests : IDisposable
         };
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            Run(sp => new CreateSessionCommandHandler(sp).Handle(new CreateSessionCommand(request), CancellationToken.None)));
+            Run(sp => new CreateSessionCommandHandler(sp).Handle(new CreateSessionCommand(request, _hostId), CancellationToken.None)));
     }
     #endregion
 
@@ -130,7 +131,7 @@ public sealed class SessionHandlersTests : IDisposable
     {
         var created = await Create(2);
 
-        var started = await Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(created.Id), CancellationToken.None));
+        var started = await Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(created.Id, _hostId), CancellationToken.None));
 
         Assert.Equal("Running", started.Status);
         Assert.Equal(0, started.CurrentQuestionIndex);
@@ -144,10 +145,10 @@ public sealed class SessionHandlersTests : IDisposable
     public async Task Start_Throws_WhenAlreadyStarted_AndDoesNotNotifyAgain()
     {
         var created = await Create();
-        await Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(created.Id), CancellationToken.None));
+        await Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(created.Id, _hostId), CancellationToken.None));
 
         await Assert.ThrowsAsync<ConflictException>(() =>
-            Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(created.Id), CancellationToken.None)));
+            Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(created.Id, _hostId), CancellationToken.None)));
 
         await _notifier.Received(1).NotifyQuestionChangedAsync(Arg.Any<string>(), Arg.Any<SessionQuestionDto>(), Arg.Any<CancellationToken>());
     }
@@ -156,10 +157,10 @@ public sealed class SessionHandlersTests : IDisposable
     public async Task Next_NotifiesSecondQuestion_ThenEndsSessionAfterTheLastOne()
     {
         var created = await Create(2);
-        await Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(created.Id), CancellationToken.None));
+        await Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(created.Id, _hostId), CancellationToken.None));
 
-        var second = await Run(sp => new NextQuestionCommandHandler(sp).Handle(new NextQuestionCommand(created.Id), CancellationToken.None));
-        var ended = await Run(sp => new NextQuestionCommandHandler(sp).Handle(new NextQuestionCommand(created.Id), CancellationToken.None));
+        var second = await Run(sp => new NextQuestionCommandHandler(sp).Handle(new NextQuestionCommand(created.Id, _hostId), CancellationToken.None));
+        var ended = await Run(sp => new NextQuestionCommandHandler(sp).Handle(new NextQuestionCommand(created.Id, _hostId), CancellationToken.None));
 
         Assert.Equal(1, second.CurrentQuestionIndex);
         Assert.Equal("Ended", ended.Status);
@@ -174,7 +175,7 @@ public sealed class SessionHandlersTests : IDisposable
         var created = await Create();
 
         await Assert.ThrowsAsync<ConflictException>(() =>
-            Run(sp => new NextQuestionCommandHandler(sp).Handle(new NextQuestionCommand(created.Id), CancellationToken.None)));
+            Run(sp => new NextQuestionCommandHandler(sp).Handle(new NextQuestionCommand(created.Id, _hostId), CancellationToken.None)));
     }
 
     [Fact]
@@ -182,7 +183,7 @@ public sealed class SessionHandlersTests : IDisposable
     {
         var created = await Create();
 
-        var ended = await Run(sp => new EndSessionCommandHandler(sp).Handle(new EndSessionCommand(created.Id), CancellationToken.None));
+        var ended = await Run(sp => new EndSessionCommandHandler(sp).Handle(new EndSessionCommand(created.Id, _hostId), CancellationToken.None));
 
         Assert.Equal("Ended", ended.Status);
         Assert.NotNull(ended.EndedAt);
@@ -193,7 +194,7 @@ public sealed class SessionHandlersTests : IDisposable
     public async Task Commit_Throws_WhenTheSessionWasModifiedByAnotherWriter()
     {
         var created = await Create(3);
-        await Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(created.Id), CancellationToken.None));
+        await Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(created.Id, _hostId), CancellationToken.None));
 
         using var scopeA = _services.CreateScope();
         using var scopeB = _services.CreateScope();
@@ -210,10 +211,36 @@ public sealed class SessionHandlersTests : IDisposable
     }
 
     [Fact]
+    public async Task Create_RecordsTheAuthenticatedUserAsHost_NotTheBodyValue()
+    {
+        var created = await Create();
+
+        using var scope = _services.CreateScope();
+        var stored = await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Sessions.SingleAsync(s => s.Id == created.Id);
+        Assert.Equal(_hostId, stored.HostUserId);
+    }
+
+    [Fact]
+    public async Task Lifecycle_Throws_Forbidden_WhenRequesterIsNotTheHost_AndChangesNothing()
+    {
+        var created = await Create();
+        var stranger = Guid.NewGuid();
+
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(created.Id, stranger), CancellationToken.None)));
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            Run(sp => new EndSessionCommandHandler(sp).Handle(new EndSessionCommand(created.Id, stranger), CancellationToken.None)));
+
+        var unchanged = await Run(sp => new GetSessionQueryHandler(sp).Handle(new GetSessionQuery(created.Id), CancellationToken.None));
+        Assert.Equal("Lobby", unchanged.Status);
+        await _notifier.DidNotReceiveWithAnyArgs().NotifySessionEndedAsync(default!, default);
+    }
+
+    [Fact]
     public async Task Start_Throws_WhenSessionDoesNotExist()
     {
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(Guid.NewGuid()), CancellationToken.None)));
+            Run(sp => new StartSessionCommandHandler(sp).Handle(new StartSessionCommand(Guid.NewGuid(), _hostId), CancellationToken.None)));
     }
     #endregion
 }

@@ -7,7 +7,7 @@ namespace ConnectLive.Core.Api.Tests;
 
 public class SessionHubTests
 {
-    private readonly SessionPresenceTracker _tracker = new();
+    private readonly ISessionPresenceTracker _tracker = new SessionPresenceTracker();
     private readonly IGroupManager _groups = Substitute.For<IGroupManager>();
     private readonly IHubCallerClients _clients = Substitute.For<IHubCallerClients>();
     private readonly IClientProxy _groupProxy = Substitute.For<IClientProxy>();
@@ -17,6 +17,7 @@ public class SessionHubTests
     {
         var context = Substitute.For<HubCallerContext>();
         context.ConnectionId.Returns("conn-1");
+        context.UserIdentifier.Returns("alice");
         _clients.Group(Arg.Any<string>()).Returns(_groupProxy);
 
         _hub = new SessionHub(_tracker) { Context = context, Groups = _groups, Clients = _clients };
@@ -25,7 +26,7 @@ public class SessionHubTests
     [Fact]
     public async Task JoinSession_AddsConnectionToGroup_AndBroadcastsUserJoined()
     {
-        var participants = await _hub.JoinSession("abc-123", "alice");
+        var participants = await _hub.JoinSession("abc-123");
 
         await _groups.Received(1).AddToGroupAsync("conn-1", SessionHub.GroupName("abc-123"), Arg.Any<CancellationToken>());
         await _groupProxy.Received(1).SendCoreAsync(SessionHubEvents.UserJoined,
@@ -34,13 +35,25 @@ public class SessionHubTests
     }
 
     [Theory]
-    [InlineData("", "alice")]
-    [InlineData("   ", "alice")]
-    [InlineData("bad id!", "alice")]
-    [InlineData("abc-123", "")]
-    public async Task JoinSession_Throws_WhenArgumentsAreInvalid(string sessionId, string userId)
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("bad id!")]
+    public async Task JoinSession_Throws_WhenSessionIdIsInvalid(string sessionId)
     {
-        await Assert.ThrowsAsync<HubException>(() => _hub.JoinSession(sessionId, userId));
+        await Assert.ThrowsAsync<HubException>(() => _hub.JoinSession(sessionId));
+
+        await _groups.DidNotReceiveWithAnyArgs().AddToGroupAsync(default!, default!, default);
+    }
+
+    [Fact]
+    public async Task JoinSession_Throws_WhenTheConnectionHasNoIdentity()
+    {
+        var anonymousContext = Substitute.For<HubCallerContext>();
+        anonymousContext.ConnectionId.Returns("conn-2");
+        anonymousContext.UserIdentifier.Returns((string?)null);
+        var hub = new SessionHub(_tracker) { Context = anonymousContext, Groups = _groups, Clients = _clients };
+
+        await Assert.ThrowsAsync<HubException>(() => hub.JoinSession("abc-123"));
 
         await _groups.DidNotReceiveWithAnyArgs().AddToGroupAsync(default!, default!, default);
     }
@@ -48,26 +61,26 @@ public class SessionHubTests
     [Fact]
     public async Task LeaveSession_RemovesFromGroup_AndBroadcastsUserLeft()
     {
-        await _hub.JoinSession("abc-123", "alice");
+        await _hub.JoinSession("abc-123");
 
         await _hub.LeaveSession("abc-123");
 
         await _groups.Received(1).RemoveFromGroupAsync("conn-1", SessionHub.GroupName("abc-123"), Arg.Any<CancellationToken>());
         await _groupProxy.Received(1).SendCoreAsync(SessionHubEvents.UserLeft,
             Arg.Is<object?[]>(a => (string)a[0]! == "alice"), Arg.Any<CancellationToken>());
-        Assert.Empty(_tracker.GetParticipants("abc-123"));
+        Assert.Empty(await _tracker.GetParticipantsAsync("abc-123"));
     }
 
     [Fact]
     public async Task OnDisconnectedAsync_BroadcastsUserLeft_ForTrackedConnection()
     {
-        await _hub.JoinSession("abc-123", "alice");
+        await _hub.JoinSession("abc-123");
 
         await _hub.OnDisconnectedAsync(null);
 
         await _groupProxy.Received(1).SendCoreAsync(SessionHubEvents.UserLeft,
             Arg.Is<object?[]>(a => (string)a[0]! == "alice"), Arg.Any<CancellationToken>());
-        Assert.Empty(_tracker.GetParticipants("abc-123"));
+        Assert.Empty(await _tracker.GetParticipantsAsync("abc-123"));
     }
 
     [Fact]

@@ -2,8 +2,6 @@
 using ConnectLive.Portal.Shared.Request;
 using ConnectLive.Portal.Shared.Response;
 using ConntectLive.DAL;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace ConnectLive.Core.Api.Configurations;
 
@@ -14,26 +12,9 @@ public class MappingProfile : Profile
         CreateMap<SaveUserRequest, UserEntity>()
             .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.UserFirstName));
 
+        // La signature (jeton d'accès) n'est jamais déduite des données : elle est émise une seule fois,
+        // à l'enregistrement, par le handler (voir docs/AUTHENTIFICATION.md). Les profils n'exposent aucun secret.
         CreateMap<UserEntity, SaveUserResponse>()
-            .ForMember(dest => dest.Signature, opt => opt.MapFrom<TokenResolver>()); 
-    }
-}
-
-public class TokenResolver : IValueResolver<UserEntity, SaveUserResponse, Token>
-{
-    public Token Resolve(UserEntity source, SaveUserResponse destination, Token destMember, ResolutionContext context)
-    {
-        StringBuilder sb = new StringBuilder();
-        using (HashAlgorithm algorithm = SHA256.Create())
-            foreach (var b in algorithm.ComputeHash(Encoding.UTF8.GetBytes(source.Email)))
-            {
-                sb.Append(b.ToString("x2"));
-            };
-
-        return new Token
-        {
-            Time = DateTime.Now,
-            Secret = sb.ToString()
-        };
+            .ForMember(dest => dest.Signature, opt => opt.Ignore());
     }
 }

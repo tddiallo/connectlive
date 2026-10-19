@@ -37,21 +37,31 @@ public class ExceptionHandlerMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        _logger.LogError(exception, "[ExceptionHandlerMiddleware][EXCEPTION]");
-
         var code = exception switch
         {
             UnauthorizedAccessException => HttpStatusCode.Unauthorized,
             KeyNotFoundException => HttpStatusCode.NotFound,
+            ForbiddenException => HttpStatusCode.Forbidden,
             ConflictException => HttpStatusCode.Conflict,
             ArgumentException => HttpStatusCode.BadRequest,
             _ => HttpStatusCode.InternalServerError
         };
 
-        await SendExceptionToAdmin(exception);
-
         // Never echo raw exception details to the client outside Development: that leaks internals.
         var isExpected = (int)code < 500;
+
+        // Un 4xx est une erreur du client (404, 409…) : un simple avertissement, sans alerte admin.
+        // Seules les erreurs serveur (5xx) méritent le niveau Error et l'alerte.
+        if (isExpected)
+        {
+            _logger.LogWarning("[ExceptionHandlerMiddleware][{StatusCode}] {Message}", (int)code, exception.Message);
+        }
+        else
+        {
+            _logger.LogError(exception, "[ExceptionHandlerMiddleware][EXCEPTION]");
+            await SendExceptionToAdmin(exception);
+        }
+
         var message = _environment.IsDevelopment() || isExpected
             ? exception.InnerException?.Message ?? exception.Message
             : "An unexpected error occurred.";

@@ -1,19 +1,18 @@
 ﻿using AutoMapper;
-using Connectlive.Proxy;
 using ConnectLive.Application;
-using ConnectLive.Application.Exceptions;
 using ConnectLive.Application.Interfaces;
-using ConnectLive.Domain.Contracts;
-using ConnectLive.Domain.Model;
 using ConnectLive.Portal.Shared.Response;
 using ConntectLive.DAL;
-using Hangfire;
-using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Workers;
 
 namespace ConnectLive.Core.Api.Queries;
+
+/// <summary>Clés de cache partagées entre les requêtes (lecture) et les commandes (invalidation).</summary>
+public static class UserCacheKeys
+{
+    public const string AllUsers = "AllUsers";
+}
 
 public static class UserQueries
 {
@@ -61,7 +60,7 @@ public static class UserQueries
         {
         }
 
-        public string Key { get; set; } = "AllUsers";
+        public string Key { get; set; } = UserCacheKeys.AllUsers;
         public int Expiration { get; set; } = 10;
     }
 
@@ -78,12 +77,8 @@ public static class UserQueries
 
         public async Task<List<SaveUserResponse>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.Users.ToListAsync();
+            var result = await _dbContext.Users.AsNoTracking().ToListAsync(cancellationToken);
 
-            // Publishing UserCreatedContractQuery, calling the newsletter count via IProxy, and enqueuing
-            // Hangfire email/newsletter jobs were only ever demonstrated here, commented out, and required
-            // MassTransit/Hangfire services this handler no longer eagerly resolves. Re-add the relevant
-            // constructor dependency if one of these is wired up for real.
 
             return result == null ? null : _mapper.Map<List<SaveUserResponse>>(result);
         }

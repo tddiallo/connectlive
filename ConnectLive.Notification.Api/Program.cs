@@ -1,9 +1,7 @@
 using Hangfire;
 using Hangfire.PostgreSql;
-using ConnectLive.Core.Api.Extensions;
-using ConnectLive.Application.BusEvents;
+using ConnectLive.Application.Messaging;
 using ConnectLive.Notification.Api.Extensions;
-using ConnectLive.Notification.Api.Controllers;
 using ConnectLive.Notification.Api;
 
 var builder = MyCustomWebHosting.CreateWebHostBuilder<ClassInfo>(args);
@@ -18,7 +16,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHangfire(x => x.UsePostgreSqlStorage(options => options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("ConnectLiveContext"))));
 builder.Services.AddHangfireServer(options => options.Queues = ["email"]);
 
-builder.Services.AddBusRegistration(builder.Configuration);
+builder.Services.AddConnectLiveMessaging(builder.Configuration, consume: true);
 
 var app = builder.Build();
 

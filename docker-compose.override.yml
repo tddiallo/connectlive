@@ -33,6 +33,11 @@ services:
       - 5433:5432
     volumes:
       - data-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U connectlive -d connectlive"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   adminer:
     restart: always
@@ -44,9 +49,12 @@ services:
     container_name: connectlive-core-api
     restart: on-failure
     depends_on:
-      - connectlive-db
-      - rabbitmq
-      - redis
+      connectlive-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_started
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
@@ -54,6 +62,7 @@ services:
       - EventBusPassword=password
       - EventBusConnection=rabbitmq://rabbitmq:5672
       - ConnectionStrings__Redis=redis:6379
+      - ConnectionStrings__ConnectLiveContext=Host=connectlive-db;Port=5432;Database=connectlive;Username=connectlive;Password=Password1
     ports:
       - 8080:8080
 

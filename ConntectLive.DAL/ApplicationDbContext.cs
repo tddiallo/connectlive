@@ -15,6 +15,7 @@ public class ApplicationDbContext : DbContext
     public virtual DbSet<QuestionEntity> Questions { get; set; }
     public virtual DbSet<SessionEntity> Sessions { get; set; }
     public virtual DbSet<SessionQuestionEntity> SessionQuestions { get; set; }
+    public virtual DbSet<SessionAnswerEntity> SessionAnswers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,6 +32,13 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(q => q.SessionId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // Les réponses disparaissent avec leur session
+        modelBuilder.Entity<SessionAnswerEntity>()
+            .HasOne<SessionEntity>()
+            .WithMany()
+            .HasForeignKey(a => a.SessionId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Une position n'est occupée que par une question par session
         modelBuilder.Entity<SessionQuestionEntity>()

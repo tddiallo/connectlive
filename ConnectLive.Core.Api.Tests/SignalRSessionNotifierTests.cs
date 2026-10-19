@@ -1,5 +1,4 @@
 using ConnectLive.Core.Api.Realtime;
-using ConnectLive.Domain.Model;
 using ConnectLive.Portal.Shared.Realtime;
 using Microsoft.AspNetCore.SignalR;
 using NSubstitute;
@@ -34,7 +33,7 @@ public class SignalRSessionNotifierTests
     [Fact]
     public async Task NotifyLeaderboardUpdatedAsync_SendsEntriesToSessionGroup()
     {
-        var entries = new List<LeaderboardModel> { new() { Rank = 1, Score = 10 } };
+        var entries = new List<LeaderboardEntryDto> { new(Guid.NewGuid(), "alice", 1, 10) };
 
         await _notifier.NotifyLeaderboardUpdatedAsync("s1", entries);
 

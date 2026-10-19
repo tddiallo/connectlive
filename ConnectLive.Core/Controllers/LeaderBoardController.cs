@@ -2,6 +2,7 @@
 
 namespace ConnectLive.Core.Controllers;
 [ApiController]
+[Microsoft.AspNetCore.Authorization.Authorize]
 [Route("[controller]")]
 public class LeaderBoardController : ControllerBase
 {

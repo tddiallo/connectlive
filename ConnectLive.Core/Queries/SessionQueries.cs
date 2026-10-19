@@ -1,5 +1,6 @@
 using ConnectLive.Application;
 using ConnectLive.Core.Api.Sessions;
+using ConnectLive.Portal.Shared.Realtime;
 using ConnectLive.Portal.Shared.Response.Sessions;
 using ConntectLive.DAL;
 using MediatR;
@@ -35,6 +36,37 @@ public static class SessionQueries
 
         public async Task<SessionResponse> Handle(GetSessionQuery request, CancellationToken cancellationToken) =>
             (await _dbContext.GetSessionOrThrowAsync(request.SessionId, cancellationToken)).ToResponse();
+    }
+    #endregion
+
+    #region GetLeaderboard
+    public class GetLeaderboardQuery : IntegrationEvent, IRequest<IReadOnlyList<LeaderboardEntryDto>>
+    {
+        public GetLeaderboardQuery(Guid sessionId)
+        {
+            SessionId = sessionId;
+        }
+
+        public Guid SessionId { get; set; }
+    }
+
+    public class GetLeaderboardQueryHandler : IRequestHandler<GetLeaderboardQuery, IReadOnlyList<LeaderboardEntryDto>>
+    {
+        private readonly ApplicationDbContext _dbContext;
+
+        public GetLeaderboardQueryHandler(IServiceProvider serviceProvider)
+        {
+            _dbContext = serviceProvider.GetRequiredService<ApplicationDbContext>();
+        }
+
+        public async Task<IReadOnlyList<LeaderboardEntryDto>> Handle(GetLeaderboardQuery request, CancellationToken cancellationToken)
+        {
+            // Vérifie l'existence pour répondre 404 plutôt qu'un classement vide pour une session inconnue
+            if (!await _dbContext.Sessions.AnyAsync(s => s.Id == request.SessionId, cancellationToken))
+                throw new KeyNotFoundException($"Session '{request.SessionId}' cannot be found.");
+
+            return await _dbContext.LoadAsync(request.SessionId, cancellationToken);
+        }
     }
     #endregion
 

@@ -15,10 +15,10 @@ public static class SessionHubEvents
     /// <summary>Un participant a quitté la session (départ explicite ou déconnexion). Argument : <c>string userId</c>.</summary>
     public const string UserLeft = "UserLeft";
 
-    /// <summary>La question courante a changé. Argument : <c>QuestionModel</c>.</summary>
+    /// <summary>La question courante a changé. Argument : <c>SessionQuestionDto</c>.</summary>
     public const string QuestionChanged = "QuestionChanged";
 
-    /// <summary>Le classement a été mis à jour. Argument : <c>IReadOnlyList&lt;LeaderboardModel&gt;</c>.</summary>
+    /// <summary>Le classement a été mis à jour. Argument : <c>IReadOnlyList&lt;LeaderboardEntryDto&gt;</c>.</summary>
     public const string LeaderboardUpdated = "LeaderboardUpdated";
 
     /// <summary>La session est terminée. Argument : <c>string sessionId</c>.</summary>
