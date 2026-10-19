@@ -1,5 +1,7 @@
 # ConnectLive — Explication du fonctionnement, de l’exécution et des mécanismes transverses
 
+> ⚠ **Document historique.** Rédigé avant plusieurs évolutions (Postgres comme base unique, configuration MassTransit centralisée, backplane Redis, authentification JWT, CI). Pour l'état actuel, voir [AUDIT-360.md](AUDIT-360.md) et les documents thématiques listés dans le [README](../README.md).
+
 Ce document explique comment l’application démarre, dans quel ordre les composants s’initialisent, comment les requêtes circulent, comment fonctionne le bus d’événements, les jobs en arrière-plan et la partie observabilité.
 
 ---

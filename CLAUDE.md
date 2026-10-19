@@ -2,122 +2,130 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Repository scope: this is one repo in a multi-repo solution
+## Repository scope
 
-`ConnectLive.Core.sln` does not build from this repo alone. Several `ProjectReference`s point outside this
-folder (`..\Workers`, `..\Connectlive.Proxy`, `..\Connectlive.WebHosting`, `..\ConnectLive.SPA`,
-`..\ConnectLive.SPA.Infrastructure`, `..\WebHostExtensions`), expecting sibling repositories checked out next
-to this one under the same parent folder (e.g. `repos\Workers`, `repos\Connectlive.Proxy`, ...). Docker builds
-confirm this: each `Dockerfile`'s compose build `context` is `..` (the parent of this repo) and explicitly
-`COPY`s csproj files from those sibling folders. If those siblings aren't present, restore/build fails on
-missing project references — that's an environment issue, not a bug in this repo.
+This repo is **self-contained for the backend**: `ConnectLive.Core.CI.slnf` (a solution filter) builds and tests the three
+APIs, the shared libraries and both test projects with nothing else checked out — that is what CI does
+(`docs/CI.md`). The three APIs no longer reference sibling folders.
+
+`ConnectLive.Core.sln` still lists projects from **sibling folders that are not versioned** (`..\Workers`,
+`..\Connectlive.Proxy`, `..\Connectlive.WebHosting`, `..\ConnectLive.SPA`, `..\ConnectLive.SPA.Infrastructure`,
+`..\WebHostExtensions`) for Visual Studio convenience. Building the full `.sln` without them fails on missing project
+files — an environment issue, not a bug here. Prefer the `.slnf` for backend work.
+
+Each Dockerfile expects this repo in a `ConnectLive.Core/` sub-folder of the build context (compose uses `context: ..`).
 
 ## Commands
 
-- Restore/build the whole solution: `dotnet restore ConnectLive.Core.sln` / `dotnet build ConnectLive.Core.sln`
-  (requires the sibling repos above to exist).
-- Run one service directly: `dotnet run --project ConnectLive.Core\ConnectLive.Core.Api.csproj` (main API),
-  `dotnet run --project ConnectLive.Notification.Api\ConnectLive.Notification.Api.csproj`, or
-  `dotnet run --project ConnectLive.Newsletter.Api\ConnectLive.Newsletter.Api.csproj`.
-- Run the full local stack (Postgres, RabbitMQ, Seq, Adminer + the 3 APIs) via Docker Compose:
-  `docker compose -f docker-compose.yml -f docker-compose.override.yml up --build`. `docker-compose.qa.yml` /
-  `docker-compose.debug.yml` are additional overlays for other environments.
-- EF Core migrations (the `DbContext` lives in `ConntectLive.DAL`, DI/config live in `ConnectLive.Core.Api`):
-  `dotnet ef migrations add <Name> --project ConntectLive.DAL --startup-project ConnectLive.Core\ConnectLive.Core.Api.csproj`,
-  then `dotnet ef database update ...` the same way.
-- There is no test project in the solution.
+- Build / test (what CI runs): `dotnet build ConnectLive.Core.CI.slnf` / `dotnet test ConnectLive.Core.CI.slnf`.
+- Local infrastructure (Postgres 5433, Redis 6379, RabbitMQ 5672, Seq, Adminer):
+  `docker compose -f docker-compose.yml -f docker-compose.override.yml up -d connectlive-db redis rabbitmq`.
+  The `connectlive-db` / `redis` / `adminer` container names are fixed: if they already exist (another Compose
+  project), reuse them rather than recreating. Full stack in Docker: same command with `up --build`.
+- Run one service: `dotnet run --project ConnectLive.Core\ConnectLive.Core.Api.csproj` (also `ConnectLive.Notification.Api`,
+  `ConnectLive.Newsletter.Api`). In Development the Core API **applies EF migrations at startup**.
+- EF Core migrations (`DbContext` in `ConntectLive.DAL`, startup project `ConnectLive.Core.Api`):
+  `dotnet ef migrations add <Name> --project ConntectLive.DAL --startup-project ConnectLive.Core\ConnectLive.Core.Api.csproj`.
+  The database is **Postgres only** (`docs/POSTGRES-DOCKER.md`); migrations are Postgres-specific.
+- Tests are xUnit + NSubstitute. Most run with no infrastructure (in-memory SQLite). Tests that need real services are
+  **skipped unless an env var is set**: `CONNECTLIVE_TEST_POSTGRES` (migrations), `CONNECTLIVE_TEST_REDIS` (presence +
+  two-instance SignalR backplane), `CONNECTLIVE_TEST_RABBITMQ` (+ `_USER`/`_PASSWORD`). CI sets all of them
+  (`docs/CI.md`). Coverage settings: `coverlet.runsettings`.
+- The API refuses to start without `Jwt:SigningKey` (≥ 32 chars) outside Development, where
+  `appsettings.Development.json` supplies a public dev-only key. See `docs/AUTHENTIFICATION.md`.
 
 ## Architecture
 
 ### Three thin API hosts over a shared kernel
 
-The solution builds three separate ASP.NET Core 8 Web APIs, each a small host that wires up shared libraries
-rather than owning business logic itself:
+Three separate ASP.NET Core 8 Web APIs, each a small host wiring shared libraries:
 
-- **ConnectLive.Core** (`ConnectLive.Core.Api`) — the main API: users, questions, sessions, leaderboard
-  endpoints; owns the MediatR/CQRS pipeline, publishes to the event bus, hosts the Hangfire dashboard at
-  `/workers`.
-- **ConnectLive.Notification.Api** — runs a Hangfire server pinned to the `"email"` queue and a MassTransit
-  consumer (`UserCreatedConsumer`).
+- **ConnectLive.Core** (`ConnectLive.Core.Api`) — the main API: users, questions, sessions, answers, leaderboard,
+  SignalR hub; owns the MediatR/CQRS pipeline and publishes events to the bus.
+- **ConnectLive.Notification.Api** — consumes `UserCreated` from RabbitMQ (`UserCreatedConsumer`) and runs a Hangfire
+  server pinned to the `"email"` queue.
 - **ConnectLive.Newsletter.Api** — runs a Hangfire server pinned to the `"newsletter"` queue.
 
 Shared libraries in this repo:
 
-- **ConnectLive.Domain** — plain models (`Model/`) and cross-service message contracts (`Contracts/`, e.g.
-  `UserCreatedContractQuery`). No infrastructure dependencies; everything else depends on it.
-- **ConntectLive.DAL** (name is intentionally spelled "Conntect" — keep it consistent, don't "fix" the typo) —
-  EF Core + Npgsql data layer: `ApplicationDbContext`, `[Table]`/`[Column]`-attributed entities, `Migrations/`,
-  and the generic repository/unit-of-work implementation.
-- **ConnectLive.Application** — cross-cutting MediatR building blocks shared by the hosts: pipeline behaviors,
-  the `IntegrationEvent` base type, bus consumers (`BusEvents/`), exception middleware.
-- **ConnectLive.Portal.Shared** — the API's request/response DTOs (the wire contracts), separate from the
-  MediatR commands/queries and from the EF entities.
-
-Building blocks consumed from **sibling repos** (see scope note above): `Workers` (`IEmailWorker`, a Hangfire
-job implementation), `Connectlive.Proxy` (`IProxy`, a typed HTTP client for calling other services),
-`Connectlive.WebHosting` (`WebHostExtensions`).
+- **ConnectLive.Domain** — cross-service message contracts (`Contracts/`, e.g. `UserCreatedContractQuery`) and domain
+  exceptions. No infrastructure dependencies; everything else depends on it.
+- **ConntectLive.DAL** (name is intentionally spelled "Conntect" — keep it, don't "fix" the typo) — EF Core + Npgsql:
+  `ApplicationDbContext`, `[Table]`/`[Column]` entities, `Migrations/`, generic repository + unit of work.
+- **ConnectLive.Application** — cross-cutting building blocks: MediatR pipeline behaviors, `IntegrationEvent`,
+  exception middleware, **messaging configuration** (`Messaging/MessagingExtensions`) and bus consumers (`BusEvents/`).
+- **ConnectLive.Portal.Shared** — request/response DTOs (the wire contracts), including realtime DTOs and
+  `SessionHubEvents`.
 
 ### CQRS via MediatR, grouped by feature
 
-Controllers are thin: they translate an HTTP call directly into `_mediator.Send(...)` and return the result
-(see `UserController`). Requests and their handlers are grouped per feature into one static container class
-under `Commands/` or `Queries/` — e.g. `UserCommands.SaveUserCommand` + `SaveUserCommandHandler`, or
-`UserQueries.GetUserQuery`/`GetUsersQuery` + their handlers — with each command/query pair kept together in a
-`#region` in the same file, rather than one class per file. Follow this grouping for new features.
+Controllers are thin: they translate an HTTP call into `_mediator.Send(...)`. Requests and their handlers are grouped
+per feature into one static container class under `Commands/` or `Queries/` (e.g. `SessionCommands`,
+`QuestionQueries`), each command/query pair kept together in a `#region` in the same file. Follow this grouping.
 
-Handlers resolve their dependencies from a single `IServiceProvider` passed into the constructor
-(`GetRequiredService<T>()` calls in the body) instead of normal constructor-injected parameters — this is the
-established pattern here (see `SaveUserCommandHandler`, `GetUsersQueryHandler`); match it for new handlers.
+Handlers resolve dependencies from a single `IServiceProvider` passed to the constructor (`GetRequiredService<T>()`)
+rather than constructor-injected parameters — the established pattern; match it. Optional services (e.g.
+`IPublishEndpoint`, only present when a broker is configured) use `GetService<T>()`.
 
 ### Cross-cutting pipeline behaviors (`ConnectLive.Application`)
 
-Two open-generic `IPipelineBehavior<,>` are registered globally for every MediatR request in `Program.cs`:
+Two open-generic `IPipelineBehavior<,>` are registered for every MediatR request:
 
-- `WatchBehavior<,>` — logs start/end and elapsed ms for every command/query. If the request derives from
-  `IntegrationEvent`, its `EventId` is used to correlate the log lines.
-- `CacheBehavior<,>` — opt-in response caching backed by `IMemoryCache` with sliding expiration. A request
-  only gets cached if it implements `ICachable<TResponse>` (`Key` + `Expiration` in seconds) and
-  `Expiration > 0`; anything else passes straight through.
-
-New commands/queries that should be traceable inherit `IntegrationEvent`; new queries that should be cached
-implement `ICachable<TResponse>` (see `UserQueries.GetUserQuery`/`GetUsersQuery`).
+- `WatchBehavior<,>` — logs start/end and elapsed ms; correlates by `IntegrationEvent.EventId`.
+- `CacheBehavior<,>` — opt-in response caching on `IDistributedCache` (Redis when `ConnectionStrings:Redis` is set,
+  otherwise process memory) with sliding expiration, for requests implementing `ICachable<TResponse>`.
 
 ### Data access: generic repository + unit of work
 
-`IGenericRepository<TEntity>` is a single EF Core-backed CRUD implementation registered as an open generic;
-`IUnitOfWork` exposes one repository property per aggregate (`Users`, `Questions`) plus `Commit()` (a single
-`SaveChanges()`). Adding a new persisted entity means: an entity class in `ConntectLive.DAL/Entity`
-implementing `IEntity`, a repository property added to `IUnitOfWork`/`UnitOfWork`, and a `DbSet<>` on
-`ApplicationDbContext`. A second, unrelated `IUnitOfWork<C>`/`UnitOfWork<C>` (generic over any `DbContext`) also
-exists for cases that don't fit the `Users`/`Questions`-specific interface.
+`IGenericRepository<TEntity>` (async `GetByIdAsync`, `Query()` read-only LINQ, `AddAsync`, `Update`, `Remove`) is
+registered as an open generic; `IUnitOfWork` exposes one repository per aggregate plus `CommitAsync(ct)` (one
+`SaveChangesAsync`). Adding an entity means: a class in `ConntectLive.DAL/Entity` implementing `IEntity`, a property on
+`IUnitOfWork`/`UnitOfWork`, a `DbSet<>` on `ApplicationDbContext`, and a migration.
 
-### Messaging and background jobs
+### Messaging (`docs/MASSTRANSIT-FLUX.md`)
 
-- **MassTransit + RabbitMQ** carries pub/sub integration events between services. Contracts live in
-  `ConnectLive.Domain/Contracts`, consumers in `ConnectLive.Application/BusEvents` (e.g.
-  `UserCreatedConsumer`). Bus connection/credentials come from the `EventBusConnection` /
-  `EventBusUserName` / `EventBusPassword` config keys.
-- **Hangfire** (Postgres storage) runs background/scheduled jobs. `ConnectLive.Core.Api` enqueues jobs via
-  `IBackgroundJobClient` and hosts the dashboard at `/workers`; `ConnectLive.Notification.Api` and
-  `ConnectLive.Newsletter.Api` each run a dedicated Hangfire *server* listening to one named queue
-  (`"email"`, `"newsletter"`), and job methods route to the right process via a `[Hangfire.Queue("...")]`
-  attribute (see `Workers.EmailWorker`).
+MassTransit 8 + RabbitMQ, configured **once** in `MessagingExtensions.AddConnectLiveMessaging(config, consume)`; it does
+nothing unless `EventBusConnection` is set. Core publishes `UserCreated` after registering a user (best effort — the
+event is lost if the broker is down; an outbox is the documented next step). Notification consumes it from queue
+`users.service` with exponential retry, failures go to `users.service_error`. Do not reintroduce
+`MassTransit.AspNetCore` / `Extensions.DependencyInjection` 7.x packages.
+
+### Realtime (`docs/SIGNALR-REALTIME.md`, `docs/SIGNALR-BACKPLANE-REDIS.md`)
+
+`SessionHub` handles presence only; business events are pushed through `ISessionNotifier`. Presence is behind
+`ISessionPresenceTracker` (in-memory or `RedisSessionPresenceTracker`). With `ConnectionStrings:Redis`, SignalR uses a
+Redis backplane (`AddConnectLiveRealtime`) so several API instances share messages and presence. Multi-instance
+deployments still need sticky sessions or WebSockets-only.
+
+### Security model (`docs/AUTHENTIFICATION.md`)
+
+- JWT Bearer auth (`ConnectLive.Core/Auth`). Controllers are `[Authorize]` except `POST /User/save-profile`, which issues
+  the token once (`signature.secret`) and is rate-limited. The authenticated user id comes from `User.GetUserId()` /
+  `Context.UserIdentifier` — never from the request body or hub arguments.
+- Domain errors map to HTTP in `ExceptionHandlerMiddleware` (wired first in the pipeline): `ArgumentException` 400,
+  `UnauthorizedAccessException` 401, `ForbiddenException` 403, `KeyNotFoundException` 404, `ConflictException` 409.
+- Session `Start`/`Next`/`End` are host-only (`SessionTransition` checks `HostUserId`); commands carry the requester id.
+- CORS comes from `Security:AllowedOrigins` (`CorsExtensions`); with no config it is open only in Development.
+
+### Gameplay flow (`docs/QUESTIONS-REPONSES.md`)
+
+Questions → session → player answers (`SubmitAnswerCommand`, server-side correction, one answer per player and question
+enforced by a unique index) → `LeaderboardUpdated` push. The correct answer never leaves the server except in the
+author's own `GET /Question/all`.
 
 ### Host bootstrap is duplicated per service, not shared
 
-`ConnectLive.Core.Api` and `ConnectLive.Notification.Api` each define their own near-identical
-`CreateWebHostBuilder<T>()` extension (`HostExtensions` in Core.Api, `MyCustomWebHosting` in Notification.Api)
-that wires config sources (appsettings + env + command line) and Serilog→Seq logging, tagging log entries with
-the assembly name of a marker type (`ClassInfo`). `ConnectLive.Newsletter.Api` has not been migrated to this
-helper and still calls the plain `WebApplication.CreateBuilder` — the three hosts are not currently
-consistent; when changing host bootstrap behavior, check all three.
+`ConnectLive.Core.Api` and `ConnectLive.Notification.Api` each define a near-identical `CreateWebHostBuilder<T>()`
+(`HostExtensions` / `MyCustomWebHosting`) wiring config sources and Serilog→Seq logging, tagged with the assembly name of a
+marker type (`ClassInfo`). `ConnectLive.Newsletter.Api` still uses plain `WebApplication.CreateBuilder`. When changing
+host bootstrap behavior, check all three.
 
 ### Known gaps — do not treat these as intended conventions to copy
 
-- `ExceptionHandlerMiddleware` / `UseCustomException()` exist in `ConnectLive.Application` but are commented
-  out in `ConnectLive.Core.Api`'s `Program.cs` — there is currently no global exception handling wired up, and
-  `SendExceptionToAdmin` in the middleware is unimplemented (`throw new NotImplementedException()`).
-- The `Result<T>` success/fail envelope (`ConnectLive.Portal.Shared`) is used by `QuestionController` but not
-  by `UserController`, `SessionController`, or `LeaderBoardController`, which return raw `Ok(...)`.
-- `SessionController`, `LeaderBoardController`, and `QuestionController` are still stubs/mocks (hardcoded
-  strings or generated mock data), not wired to MediatR or the database.
+Full status in `docs/AUDIT-360.md`. Notable open items:
+- `SendExceptionToAdmin` only logs at Critical level (no real alerting), and only for 5xx.
+- `Result<T>` is used by Session/Question controllers but `UserController` and `LeaderBoardController` still return raw
+  `Ok(...)`; error bodies are `{ "error": "..." }`, not ProblemDetails.
+- `LeaderBoardController` is a stub (the real leaderboard is `GET /Session/{id}/leaderboard`).
+- No token re-issue/revocation (a lost JWT cannot be recovered); no transactional outbox for bus events.
+- Presence entries of a crashed API instance linger in Redis until their 12 h expiry.

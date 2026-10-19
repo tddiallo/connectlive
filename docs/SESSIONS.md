@@ -6,7 +6,9 @@ Permettre à un animateur de **créer** une session à partir de questions exist
 défiler les questions** puis de la **terminer**, pendant que les joueurs rejoignent via un **code** court et
 reçoivent chaque question en temps réel (voir [SIGNALR-REALTIME.md](SIGNALR-REALTIME.md)).
 
-Hors périmètre de cette itération (prévu ensuite) : réponses des joueurs, scores et classement, authentification.
+Les réponses des joueurs, scores et classement sont décrits dans [QUESTIONS-REPONSES.md](QUESTIONS-REPONSES.md) et
+l'authentification dans [AUTHENTIFICATION.md](AUTHENTIFICATION.md). **Toutes les routes ci-dessous exigent un jeton
+Bearer**, et `Start`/`Next`/`End` sont réservées à l'animateur.
 
 ## Machine à états
 
@@ -54,6 +56,11 @@ conservé pour les 4xx ; les 500 restent opaques hors Development).
 | `POST /Session/{id}/start` | `Lobby → Running` | 404, 409 |
 | `POST /Session/{id}/next` | Question suivante / fin | 404, 409 |
 | `POST /Session/{id}/end` | Fin anticipée | 404, 409 |
+| `POST /Session/{id}/answer` | Réponse d'un joueur ([QUESTIONS-REPONSES.md](QUESTIONS-REPONSES.md)) | 400, 403, 404, 409 |
+| `GET /Session/{id}/leaderboard` | Classement courant | 404 |
+
+`POST /Session/create` : l'animateur est **l'utilisateur authentifié** ; `hostUserId` du corps est ignoré. `start`,
+`next`, `end` répondent aussi **403** si l'appelant n'est pas l'animateur.
 
 Correspondance exceptions → HTTP dans `ExceptionHandlerMiddleware` : `ArgumentException` 400, `KeyNotFoundException` 404,
 `ConflictException` 409.
@@ -75,8 +82,8 @@ position/total) **sans** réponse correcte. La correction restera côté serveur
 
 ## Limites connues
 
-- Pas d'authentification : n'importe qui peut démarrer/avancer une session (le `HostUserId` est enregistré mais non
-  contrôlé). À traiter avec l'authentification.
+- Seul l'**animateur** (l'utilisateur authentifié qui a créé la session) peut la démarrer, l'avancer ou la terminer :
+  les autres reçoivent **403** ([AUTHENTIFICATION.md](AUTHENTIFICATION.md)).
 - `Next` envoie l'événement après le `Commit` ; si l'envoi SignalR échoue, l'état en base a déjà avancé (les clients
   peuvent se resynchroniser avec `GET /Session/{id}`).
 
@@ -90,5 +97,4 @@ position/total) **sans** réponse correcte. La correction restera côté serveur
 | Exécution réelle (API + SQLite + client SignalR) | création → by-code → start → next → fin ; 409 (démarrage en double, `next` en `Lobby`/`Ended`), 404, 400 ; le client reçoit `QuestionChanged` ×2 puis `SessionEnded` |
 
 Mise en route locale : `dotnet ef database update --project ConntectLive.DAL --startup-project ConnectLive.Core\ConnectLive.Core.Api.csproj`.
-Les questions ne peuvent pas encore être créées via l'API (`QuestionController` est un mock) : insérer des lignes dans
-`questions` pour tester.
+Les questions se créent via `POST /Question/save` ([QUESTIONS-REPONSES.md](QUESTIONS-REPONSES.md)).

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker>
+  </defs>
+  <rect width="1000" height="560" fill="#ffffff"/>
+  <text x="500" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Pipeline d'intégration continue (GitHub Actions)</text>
+  <text x="500" y="58" text-anchor="middle" font-size="14" fill="#475569">Déclenché à chaque push sur main et à chaque pull request. Rouge = on ne fusionne pas.</text>
+
+  <rect x="24" y="214" width="150" height="86" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <text x="99" y="244" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">push / PR</text>
+  <text x="99" y="266" text-anchor="middle" font-size="12" fill="#475569">annule le run précédent</text>
+  <text x="99" y="284" text-anchor="middle" font-size="12" fill="#475569">de la même branche</text>
+
+  <line x1="174" y1="257" x2="214" y2="170" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+  <line x1="174" y1="257" x2="214" y2="430" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+
+  <!-- Job 1 -->
+  <rect x="216" y="84" width="760" height="270" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="236" y="110" font-size="16" font-weight="700" fill="#1e3a8a">Job 1 · build-and-test</text>
+  <text x="236" y="130" font-size="12" fill="#475569">services réels lancés à côté du job :</text>
+
+  <rect x="236" y="142" width="170" height="40" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="321" y="167" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">Postgres 16</text>
+  <rect x="418" y="142" width="170" height="40" rx="8" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="503" y="167" text-anchor="middle" font-size="13" font-weight="700" fill="#991b1b">Redis 7</text>
+  <rect x="600" y="142" width="170" height="40" rx="8" fill="#ffedd5" stroke="#ea580c"/>
+  <text x="685" y="167" text-anchor="middle" font-size="13" font-weight="700" fill="#9a3412">RabbitMQ 4.1</text>
+  <text x="788" y="160" font-size="12" fill="#475569">migrations · backplane</text>
+  <text x="788" y="176" font-size="12" fill="#475569">SignalR · transport bus</text>
+
+  <rect x="236" y="214" width="120" height="86" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+  <text x="296" y="240" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">1 Restore</text>
+  <text x="296" y="262" text-anchor="middle" font-size="12" fill="#475569">paquets NuGet</text>
+  <text x="296" y="280" text-anchor="middle" font-size="12" fill="#475569">(en cache)</text>
+  <rect x="376" y="214" width="120" height="86" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+  <text x="436" y="240" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">2 Build</text>
+  <text x="436" y="262" text-anchor="middle" font-size="12" fill="#475569">Release, 9</text>
+  <text x="436" y="280" text-anchor="middle" font-size="12" fill="#475569">projets</text>
+  <rect x="516" y="214" width="140" height="86" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+  <text x="586" y="240" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">3 Tests</text>
+  <text x="586" y="262" text-anchor="middle" font-size="12" fill="#475569">139 tests, aucun</text>
+  <text x="586" y="280" text-anchor="middle" font-size="12" fill="#475569">ignoré en CI</text>
+  <rect x="676" y="214" width="140" height="86" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  <text x="746" y="240" text-anchor="middle" font-size="14" font-weight="700" fill="#14532d">4 Couverture</text>
+  <text x="746" y="262" text-anchor="middle" font-size="12" fill="#475569">seuil : 80 %</text>
+  <text x="746" y="280" text-anchor="middle" font-size="12" fill="#475569">(mesuré : ~88 %)</text>
+  <rect x="836" y="214" width="124" height="86" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+  <text x="898" y="240" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">5 Rapports</text>
+  <text x="898" y="262" text-anchor="middle" font-size="12" fill="#475569">artefact « test-</text>
+  <text x="898" y="280" text-anchor="middle" font-size="12" fill="#475569">results » (7 j)</text>
+  <line x1="356" y1="257" x2="376" y2="257" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="496" y1="257" x2="516" y2="257" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="656" y1="257" x2="676" y2="257" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="816" y1="257" x2="836" y2="257" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <text x="236" y="334" font-size="12" fill="#475569">Compile ConnectLive.Core.CI.slnf : les 3 API, Application, Domain, DAL, Portal.Shared et les 2 projets de tests.</text>
+
+  <!-- Job 2 -->
+  <rect x="216" y="384" width="760" height="150" rx="14" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="236" y="410" font-size="16" font-weight="700" fill="#14532d">Job 2 · docker-images (en parallèle du job 1)</text>
+  <rect x="236" y="430" width="220" height="64" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  <text x="346" y="457" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">image Core.Api</text>
+  <text x="346" y="477" text-anchor="middle" font-size="12" fill="#475569">docker buildx build (sans push)</text>
+  <rect x="476" y="430" width="220" height="64" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  <text x="586" y="457" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">image Notification.Api</text>
+  <text x="586" y="477" text-anchor="middle" font-size="12" fill="#475569">docker buildx build (sans push)</text>
+  <rect x="716" y="430" width="240" height="64" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  <text x="836" y="457" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">image Newsletter.Api</text>
+  <text x="836" y="477" text-anchor="middle" font-size="12" fill="#475569">docker buildx build (sans push)</text>
+  <text x="236" y="518" font-size="12" fill="#475569">Vérifie que les Dockerfiles fonctionnent avec le dépôt seul (aucun dépôt voisin requis).</text>
+</svg>

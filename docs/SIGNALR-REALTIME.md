@@ -7,7 +7,7 @@ Client (SPA)  ──JoinSession/LeaveSession──▶  SessionHub  ──▶  Se
      ▲                                          │
      │  UserJoined / UserLeft                   │ groupe "session:{id}"
      │  QuestionChanged / LeaderboardUpdated    │
-     └──────────── SignalRSessionNotifier ◀── ISessionNotifier ◀── handlers MediatR (à venir)
+     └──────────── SignalRSessionNotifier ◀── ISessionNotifier ◀── handlers MediatR
 ```
 
 - **Endpoint** : `/sessionHub` (`SessionHubEvents.HubPath`), mappé dans `Program.cs`.
@@ -21,7 +21,7 @@ Client (SPA)  ──JoinSession/LeaveSession──▶  SessionHub  ──▶  Se
 |---|---|
 | `ConnectLive.Portal.Shared/Realtime/SessionHubEvents.cs` | Chemin du hub + noms d'événements (partagés avec la SPA) |
 | `ConnectLive.Core/Realtime/SessionHub.cs` | Méthodes appelables par les clients, validation des identifiants |
-| `ConnectLive.Core/Realtime/SessionPresenceTracker.cs` | Suivi connexion → (session, utilisateur), thread-safe |
+| `ConnectLive.Core/Realtime/ISessionPresenceTracker.cs` | Contrat de présence ; implémentations `SessionPresenceTracker` (mémoire) et `RedisSessionPresenceTracker` |
 | `ConnectLive.Core/Realtime/ISessionNotifier.cs` | Abstraction d'envoi d'événements métier |
 | `ConnectLive.Core/Realtime/SignalRSessionNotifier.cs` | Implémentation via `IHubContext<SessionHub>` |
 
@@ -31,21 +31,23 @@ Méthodes serveur (appelées par le client) :
 
 | Méthode | Effet | Retour |
 |---|---|---|
-| `JoinSession(sessionId, userId)` | Entre dans le groupe, diffuse `UserJoined` | Participants connectés |
+| `JoinSession(sessionId)` | Entre dans le groupe, diffuse `UserJoined` (identité = `sub` du jeton) | Participants connectés |
 | `LeaveSession(sessionId)` | Sort du groupe, diffuse `UserLeft` | — |
 
 Événements (reçus par le client) : `UserJoined(userId)`, `UserLeft(userId)`, `QuestionChanged(SessionQuestionDto)` (jamais la bonne réponse),
-`LeaderboardUpdated(LeaderboardModel[])`, `SessionEnded(sessionId)`.
+`LeaderboardUpdated(LeaderboardEntryDto[])` (`userId`, `nickname`, `rank`, `score`), `SessionEnded(sessionId)`.
 
 Une déconnexion brutale (onglet fermé, réseau coupé) déclenche automatiquement `UserLeft`.
 
 Exemple client (.NET) :
 
 ```csharp
-var connection = new HubConnectionBuilder().WithUrl("https://api/sessionHub").WithAutomaticReconnect().Build();
+var connection = new HubConnectionBuilder()
+    .WithUrl("https://api/sessionHub", o => o.AccessTokenProvider = () => Task.FromResult<string?>(jwt))
+    .WithAutomaticReconnect().Build();
 connection.On<string>(SessionHubEvents.UserJoined, userId => /* maj UI */);
 await connection.StartAsync();
-var participants = await connection.InvokeAsync<string[]>("JoinSession", sessionId, userId);
+var participants = await connection.InvokeAsync<string[]>("JoinSession", sessionId);
 ```
 
 ## Utiliser le notifier depuis un handler
@@ -58,17 +60,17 @@ await _notifier.NotifyQuestionChangedAsync(sessionId, questionDto, cancellationT
 
 ## Sécurité et limites connues
 
-- **Validation** : `sessionId` / `userId` limités à `[A-Za-z0-9_-]`, 64 caractères max (ils composent un nom de groupe) ;
-  sinon `HubException`.
-- **Pas d'authentification** pour l'instant : `userId` est déclaré par le client et non vérifié. À remplacer par
-  l'identité du `Context.User` dès que l'authentification JWT/OIDC existe (voir plan de sprint).
-- **CORS** : la politique actuelle (`AllowAnyOrigin`, temporaire) est compatible avec SignalR sans cookies ; passer à
-  une liste d'origines + `AllowCredentials()` si l'auth par cookie est adoptée.
-- **Multi-instances** : la présence est en mémoire de process et les groupes sont locaux à chaque instance. Pour
-  scaler, ajouter le backplane Redis (`Microsoft.AspNetCore.SignalR.StackExchangeRedis`, réutilisant
-  `ConnectionStrings:Redis`) et déplacer le tracker vers Redis.
+- **Validation** : `sessionId` limité à `[A-Za-z0-9_-]`, 64 caractères max (il compose un nom de groupe) ; sinon
+  `HubException`.
+- **Authentification** : le hub est `[Authorize]`. Le jeton JWT est transmis par `?access_token=` (uniquement sur
+  `/sessionHub`) et l'identité du participant est celle du jeton, jamais une valeur fournie par le client
+  ([AUTHENTIFICATION.md](AUTHENTIFICATION.md)).
+- **CORS** : origines de `Security:AllowedOrigins` avec `AllowCredentials()` ; hors Development, aucune origine
+  n'est autorisée sans configuration.
+- **Multi-instances** : avec `ConnectionStrings:Redis`, un backplane Redis relaie les messages entre instances et la présence est
+  stockée dans Redis — voir [SIGNALR-BACKPLANE-REDIS.md](SIGNALR-BACKPLANE-REDIS.md) (schémas, configuration, limites).
 
 ## Tests
 
-`ConnectLive.Core.Api.Tests` : `SessionHubTests` (join/leave/déconnexion/validation), `SessionPresenceTrackerTests`,
+`ConnectLive.Core.Api.Tests` : `SessionHubTests` (join/leave/déconnexion/validation), `PresenceTrackerContract` (mémoire + Redis), `SignalRBackplaneTests`,
 `SignalRSessionNotifierTests`. Lancer : `dotnet test ConnectLive.Core.Api.Tests`.

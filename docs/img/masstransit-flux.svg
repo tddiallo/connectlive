@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 640" width="1040" height="640" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect width="1040" height="640" fill="#ffffff"/>
+
+  <text x="520" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Trajet d'un message avec MassTransit + RabbitMQ</text>
+  <text x="520" y="58" text-anchor="middle" font-size="14" fill="#475569">Exemple : « un utilisateur vient de s'inscrire » (UserCreatedContractQuery)</text>
+
+  <!-- Producteur -->
+  <rect x="24" y="170" width="220" height="190" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="134" y="198" text-anchor="middle" font-size="17" font-weight="700" fill="#1e3a8a">Core.Api</text>
+  <text x="134" y="220" text-anchor="middle" font-size="13" fill="#1e3a8a">(producteur)</text>
+  <text x="134" y="252" text-anchor="middle" font-size="13" fill="#0f172a">SaveUserCommandHandler</text>
+  <text x="134" y="274" text-anchor="middle" font-size="13" fill="#0f172a">1. enregistre l'utilisateur</text>
+  <text x="134" y="294" text-anchor="middle" font-size="13" fill="#0f172a">en base (commit)</text>
+  <text x="134" y="322" text-anchor="middle" font-size="13" fill="#0f172a">2. IPublishEndpoint</text>
+  <text x="134" y="342" text-anchor="middle" font-size="13" fill="#0f172a">.Publish(UserCreated…)</text>
+
+  <!-- Broker -->
+  <rect x="300" y="84" width="470" height="520" rx="14" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="535" y="110" text-anchor="middle" font-size="17" font-weight="700" fill="#9a3412">RabbitMQ (broker)</text>
+
+  <rect x="320" y="128" width="430" height="74" rx="10" fill="#ffedd5" stroke="#ea580c"/>
+  <text x="535" y="152" text-anchor="middle" font-size="13" font-weight="700" fill="#9a3412">EXCHANGE « fanout » (nom = type du message)</text>
+  <text x="535" y="176" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#0f172a">ConnectLive.Domain.Contracts:</text>
+  <text x="535" y="192" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#0f172a">UserCreatedContractQuery</text>
+
+  <line x1="535" y1="202" x2="535" y2="252" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="548" y="232" font-size="12" fill="#475569">binding (créé par le consommateur)</text>
+
+  <rect x="320" y="254" width="430" height="64" rx="10" fill="#ffedd5" stroke="#ea580c"/>
+  <text x="535" y="278" text-anchor="middle" font-size="13" font-weight="700" fill="#9a3412">EXCHANGE « fanout » du point de réception</text>
+  <text x="535" y="303" text-anchor="middle" font-size="13" font-family="Consolas, monospace" fill="#0f172a">users.service</text>
+
+  <line x1="535" y1="318" x2="535" y2="364" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+
+  <rect x="320" y="366" width="430" height="74" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="535" y="390" text-anchor="middle" font-size="13" font-weight="700" fill="#92400e">QUEUE durable (les messages attendent ici)</text>
+  <text x="535" y="414" text-anchor="middle" font-size="13" font-family="Consolas, monospace" fill="#0f172a">users.service</text>
+  <rect x="640" y="400" width="26" height="22" rx="4" fill="#fbbf24" stroke="#b45309"/>
+  <rect x="672" y="400" width="26" height="22" rx="4" fill="#fbbf24" stroke="#b45309"/>
+  <rect x="704" y="400" width="26" height="22" rx="4" fill="#fbbf24" stroke="#b45309"/>
+
+  <line x1="535" y1="440" x2="535" y2="504" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrRed)"/>
+  <text x="548" y="476" font-size="12" fill="#b91c1c">après 5 échecs du consommateur</text>
+  <rect x="320" y="506" width="430" height="60" rx="10" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="535" y="530" text-anchor="middle" font-size="13" font-weight="700" fill="#991b1b">QUEUE d'erreurs (« dead letter »)</text>
+  <text x="535" y="552" text-anchor="middle" font-size="13" font-family="Consolas, monospace" fill="#0f172a">users.service_error</text>
+
+  <!-- Consommateur -->
+  <rect x="816" y="330" width="200" height="190" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+  <text x="916" y="358" text-anchor="middle" font-size="17" font-weight="700" fill="#14532d">Notification.Api</text>
+  <text x="916" y="380" text-anchor="middle" font-size="13" fill="#14532d">(consommateur)</text>
+  <text x="916" y="412" text-anchor="middle" font-size="13" fill="#0f172a">UserCreatedConsumer</text>
+  <text x="916" y="440" text-anchor="middle" font-size="13" fill="#0f172a">5. reçoit le message</text>
+  <text x="916" y="460" text-anchor="middle" font-size="13" fill="#0f172a">6. traite, puis « ack »</text>
+  <text x="916" y="486" text-anchor="middle" font-size="12" fill="#475569">retry : 1 s, 2 s, 4 s…</text>
+
+  <!-- Flèches principales -->
+  <path d="M244,265 C275,265 285,165 320,165" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arr)"/>
+  <circle cx="282" cy="215" r="13" fill="#2563eb"/><text x="282" y="220" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">3</text>
+
+  <path d="M750,403 C790,403 790,420 816,420" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arr)"/>
+  <circle cx="789" cy="392" r="13" fill="#16a34a"/><text x="789" y="397" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">5</text>
+
+  <circle cx="505" cy="228" r="13" fill="#ea580c"/><text x="505" y="233" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">4</text>
+
+  <!-- Légende -->
+  <text x="24" y="400" font-size="14" font-weight="700" fill="#0f172a">Lecture du schéma</text>
+  <text x="24" y="424" font-size="13" fill="#334155">3 · MassTransit sérialise le message en JSON</text>
+  <text x="24" y="444" font-size="13" fill="#334155">     (enveloppe + contenu) et l'envoie à l'exchange.</text>
+  <text x="24" y="470" font-size="13" fill="#334155">4 · RabbitMQ copie le message dans chaque queue</text>
+  <text x="24" y="490" font-size="13" fill="#334155">     liée : ici une seule, users.service.</text>
+  <text x="24" y="516" font-size="13" fill="#334155">5 · Notification.Api tire le message de la queue.</text>
+  <text x="24" y="542" font-size="13" fill="#334155">Core.Api ignore qui écoute : ajouter un 2ᵉ</text>
+  <text x="24" y="562" font-size="13" fill="#334155">consommateur ne change rien côté producteur.</text>
+  <text x="24" y="598" font-size="12" fill="#64748b">Topologie relevée sur un vrai RabbitMQ 4.1 (API de gestion) — voir docs/MASSTRANSIT-FLUX.md</text>
+</svg>

@@ -27,7 +27,7 @@ flowchart LR
         Seq[("📊 Seq + Serilog<br/>Logs structurés<br/>centralisés")]
     end
 
-    subgraph DB["🐘 PostgreSQL / SQLite (EF Core)"]
+    subgraph DB["🐘 PostgreSQL (EF Core)"]
         direction TB
         T1["Users ✅"]
         T2["Questions ✅"]
@@ -58,24 +58,24 @@ flowchart LR
 |---|---|---|
 | **Presentation** | `Controllers/` (`UserController`, `QuestionController`...) + `ConnectLive.Portal.Shared` (DTOs) | Traduit une requête HTTP en `_mediator.Send(...)`, ne contient aucune logique métier |
 | **Application** | `ConnectLive.Application` (`WatchBehavior`, `CacheBehavior`, `IntegrationEvent`, `BusEvents/`) + `Commands/`/`Queries/` dans l'API | CQRS via MediatR, comportements transverses (log, cache) |
-| **Domain** | `ConnectLive.Domain/Model` (`SessionModel`, `QuestionModel`, `UserModel`, `LeaderboardModel`) | Modèles métier — aujourd'hui de simples POCO, sans règles |
+| **Domain** | `ConnectLive.Domain` (`Contracts/` : messages entre services, `Exceptions/`) ; les règles de session vivent dans `SessionEntity` (DAL) | Contrats d'intégration et exceptions métier |
 | **Infrastructure** | `ConntectLive.DAL` (EF Core, `GenericRepository`, `UnitOfWork`) + bus/jobs | Persistance et intégrations externes |
 
 ## Middleware & infrastructure transverse
 
 | Brique | État | Rôle |
 |---|---|---|
-| **RabbitMQ + MassTransit** | ✅ câblé, 🔜 pas encore utilisé en pratique | Communication événementielle découplée entre services |
-| **Hangfire** | ✅ câblé (désactivé en local dev) | Jobs différés/planifiés (email, newsletter) stockés en PostgreSQL |
+| **RabbitMQ + MassTransit** | ✅ actif dès que `EventBusConnection` est renseignée — voir [docs/MASSTRANSIT-FLUX.md](docs/MASSTRANSIT-FLUX.md) | `UserCreated` publié par Core, consommé par Notification (retry + file d'erreurs) |
+| **Hangfire** | ⏸ serveurs Hangfire dans Notification/Newsletter ; plus utilisé par Core | Jobs différés/planifiés (email, newsletter) stockés en PostgreSQL |
 | **Seq + Serilog** | ✅ câblé sur 2 des 3 services | Logs structurés centralisés, interrogeables |
-| **Redis** | ✅ câblé (`IDistributedCache`, repli mémoire si non configuré) — voir [docs/REDIS-CACHE.md](docs/REDIS-CACHE.md) | Cache distribué des requêtes MediatR, futur état partagé des sessions live |
+| **Redis** | ✅ cache distribué, backplane SignalR et présence partagée (repli mémoire si non configuré) — voir [docs/REDIS-CACHE.md](docs/REDIS-CACHE.md) et [docs/SIGNALR-BACKPLANE-REDIS.md](docs/SIGNALR-BACKPLANE-REDIS.md) | Cache des requêtes MediatR ; messages et présence SignalR partagés entre instances |
 
 ## Base de données
 
 - **EF Core Code-First**, un seul `DbContext` (`ApplicationDbContext`)
-- Tables actives : `Users`, `Questions`, `Sessions`, `Session_questions`
-- Table prévue mais pas encore persistée : `Leaderboard` (modèles du domaine existants, `DbSet` commentés)
-- SQLite en local dev (zéro dépendance externe) ; PostgreSQL via Docker Compose pour la prod / pour Hangfire
+- Tables : `users`, `questions`, `sessions`, `session_questions`, `session_answers`
+- Le classement est calculé à la volée à partir de `session_answers` (pas de table dédiée)
+- **PostgreSQL partout** (conteneur Docker en développement, CI et production) — voir [docs/POSTGRES-DOCKER.md](docs/POSTGRES-DOCKER.md) ; SQLite en mémoire seulement pour les tests unitaires rapides
 
 ---
 
@@ -90,18 +90,17 @@ flowchart LR
 ✅ **En place**
 - Gestion des utilisateurs (créer, lister) — vertical complet Controller → MediatR → EF Core
 - Architecture CQRS avec comportements transverses (logging, cache mémoire)
-- Traitement asynchrone câblé (RabbitMQ/MassTransit) — prêt mais dormant
-- Jobs en arrière-plan câblés (Hangfire) — prêt mais dormant
+- Traitement asynchrone (RabbitMQ/MassTransit) actif : `UserCreated` publié et consommé
+- Jobs en arrière-plan : serveurs Hangfire dans Notification/Newsletter (Core ne les utilise plus)
 - Logs structurés (Serilog → Seq) sur 2 des 3 services
-- Dashboard Hangfire sécurisé (Basic Auth + fail-closed hors Development)
 - Gestion globale des exceptions (pas de fuite d'info en prod)
 
 🔜 **Prévu / à construire** (détail dans le [sprint planning](https://claude.ai/artifact/AHdiWMRQMd6TSDx79DCfFU))
 - Cache distribué avec **Redis**
-- Sessions de quiz en **temps réel** : hub SignalR ✅ ([docs/SIGNALR-REALTIME.md](docs/SIGNALR-REALTIME.md)), cycle de vie des sessions branché ([docs/SESSIONS.md](docs/SESSIONS.md)) ; restent réponses des joueurs et classement
-- Questions / Sessions / Leaderboard : logique métier réelle (aujourd'hui stubbée)
-- Authentification (JWT ou OIDC) — aucune aujourd'hui
-- Tests automatisés (0 test dans la solution actuellement) + CI/CD
+- Sessions de quiz en **temps réel** ✅ : hub SignalR ([docs/SIGNALR-REALTIME.md](docs/SIGNALR-REALTIME.md)), cycle de vie des sessions ([docs/SESSIONS.md](docs/SESSIONS.md)), questions, réponses des joueurs et classement ([docs/QUESTIONS-REPONSES.md](docs/QUESTIONS-REPONSES.md))
+- Authentification JWT ✅ ([docs/AUTHENTIFICATION.md](docs/AUTHENTIFICATION.md)) — reste : connexion/reconnexion et révocation
+- Tests automatisés ✅ (139 tests, intégration HTTP + services réels) et CI GitHub Actions ✅ ([docs/CI.md](docs/CI.md)) — reste : CD
+- Voir le suivi complet des constats d'audit dans [docs/AUDIT-360.md](docs/AUDIT-360.md)
 
 ---
 

@@ -11,16 +11,16 @@ partager cette configuration avec l'équipe.
 |---|---|
 | Profils multi-projet dans `ConnectLive.Core.slnLaunch` (versionné) | Format natif de VS (≥ 2022 17.11) ; un profil *partagé* est un fichier JSON à côté du `.sln`, contrairement au `.suo` qui est personnel et ignoré par git |
 | Un profil de lancement `local-infra` par hôte (`Properties/launchSettings.json`) | Les hôtes tournent sur la machine (débogage) mais leurs dépendances sont dans Docker : les noms d'hôtes du `appsettings.json` (`connectlive-db`, `seq`, `rabbitmq`) ne se résolvent qu'*à l'intérieur* du réseau Docker. Le profil surcharge ces valeurs par `localhost` via des variables d'environnement, sans toucher à la config de déploiement |
-| Profil 1 sans aucune dépendance | L'API Core local utilise SQLite + cache mémoire (Hangfire et RabbitMQ y sont désactivés) : on peut développer sans Docker |
+| Profils 1 et 2 : seul Postgres est requis | L'API Core utilise Postgres (une seule base partout, voir [POSTGRES-DOCKER.md](POSTGRES-DOCKER.md)) ; le cache reste en mémoire, RabbitMQ et Redis sont optionnels (sans leurs variables, ils sont simplement inactifs). Lancer `docker compose … up -d connectlive-db` puis F5 ; les migrations s'appliquent au démarrage |
 | `wwwroot/appsettings.Development.json` dans la SPA | La SPA visait `https://localhost:8081/` (inexistant) ; en Development elle vise l'API sur `http://localhost:5101/` |
 
 ## Prérequis
 
 - Visual Studio 2022 **17.11+** (17.14 installé sur la machine de dev) ou Visual Studio 2026
-- Les projets frères présents à côté de ce dépôt (`..\ConnectLive.SPA`, `..\Workers`, …) — voir `CLAUDE.md`
+- Les projets frères présents à côté de ce dépôt (`..ConnectLive.SPA`, …) pour la SPA et la solution complète — voir `CLAUDE.md`
 - **Activer la fonctionnalité** : *Tools ▸ Options ▸ Environment ▸ Preview Features ▸ Enable Multi-Project Launch Profiles*
   (VS 2026 : *Tools ▸ Options ▸ All Settings ▸ Preview Features*), puis rouvrir la solution
-- Docker Desktop uniquement pour le profil 3
+- Docker Desktop (Postgres au minimum ; tout le reste pour le profil 3)
 
 ## Utilisation
 
@@ -31,8 +31,8 @@ partager cette configuration avec l'équipe.
 
 | Profil | Projets lancés | Dépendances |
 |---|---|---|
-| **1 - Local : API + SPA** *(défaut recommandé)* | `ConnectLive.Core.Api` (5101) + `ConnectLive.SPA` (5279) | aucune |
-| **2 - Local : API seule** | `ConnectLive.Core.Api` (5101) | aucune |
+| **1 - Local : API + SPA** *(défaut recommandé)* | `ConnectLive.Core.Api` (5101) + `ConnectLive.SPA` (5279) | Postgres (`connectlive-db`) |
+| **2 - Local : API seule** | `ConnectLive.Core.Api` (5101) | Postgres (`connectlive-db`) |
 | **3 - Stack complète** | Core.Api + Notification.Api (5223) + Newsletter.Api (5077) + SPA | Docker (ci-dessous) |
 
 Swagger : <http://localhost:5101/swagger> · SPA : <http://localhost:5279> · Hub SignalR : `http://localhost:5101/sessionHub`.
@@ -46,9 +46,9 @@ docker compose -f docker-compose.yml -f docker-compose.override.yml up -d seq ra
 
 | Service | Port hôte | Utilisé par |
 |---|---|---|
-| PostgreSQL (`connectlive-db`) | 5433 | Hangfire (Notification, Newsletter) |
+| PostgreSQL (`connectlive-db`) | 5433 | **base de Core.Api** (EF Core) ; Hangfire (Notification, Newsletter) |
 | RabbitMQ | 5672 (AMQP), 15672 (UI : `user` / `password`) | MassTransit (Notification) |
-| Redis | 6379 | cache distribué de Core.Api (`ConnectionStrings__Redis`) |
+| Redis | 6379 | cache distribué + backplane SignalR + présence (`ConnectionStrings__Redis`, voir [SIGNALR-BACKPLANE-REDIS.md](SIGNALR-BACKPLANE-REDIS.md)) |
 | Seq | 8199 | logs Serilog (`Serilog__SeqServerUrl`) |
 
 Arrêt : `docker compose -f docker-compose.yml -f docker-compose.override.yml down`.

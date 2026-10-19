@@ -1,5 +1,7 @@
 # Plan d’intégration Redis + SignalR
 
+> ⚠ **Document historique.** Rédigé avant plusieurs évolutions (Postgres comme base unique, configuration MassTransit centralisée, backplane Redis, authentification JWT, CI). Pour l'état actuel, voir [AUDIT-360.md](AUDIT-360.md) et les documents thématiques listés dans le [README](../README.md).
+
 ## Objectif
 
 Faire passer l’application d’une base locale et d’une logique de cache mémoire vers un système prêt pour le live / session temps réel, avec un cache distribué et une diffusion de notifications en temps réel.

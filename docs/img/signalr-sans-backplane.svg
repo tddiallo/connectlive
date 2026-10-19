@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#16a34a"/></marker>
+    <marker id="ko" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/></marker>
+    <marker id="gr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+  </defs>
+  <rect width="1000" height="520" fill="#ffffff"/>
+  <text x="500" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">SANS backplane : chaque instance ne connaît que ses propres clients</text>
+  <text x="500" y="58" text-anchor="middle" font-size="14" fill="#475569">Dès qu'on lance 2 instances de l'API derrière un répartiteur de charge, des joueurs ne reçoivent plus rien.</text>
+
+  <!-- Répartiteur -->
+  <rect x="350" y="84" width="300" height="46" rx="10" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <text x="500" y="112" text-anchor="middle" font-size="14" fill="#0f172a">Répartiteur de charge (load balancer)</text>
+  <line x1="420" y1="130" x2="230" y2="176" stroke="#475569" stroke-width="2" marker-end="url(#gr)"/>
+  <line x1="580" y1="130" x2="770" y2="176" stroke="#475569" stroke-width="2" marker-end="url(#gr)"/>
+
+  <!-- Instance A -->
+  <rect x="60" y="178" width="340" height="150" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="230" y="206" text-anchor="middle" font-size="17" font-weight="700" fill="#1e3a8a">Instance A de l'API</text>
+  <text x="230" y="234" text-anchor="middle" font-size="13" fill="#0f172a">Hub SignalR : connaît seulement</text>
+  <text x="230" y="254" text-anchor="middle" font-size="13" fill="#0f172a">les connexions ouvertes sur A</text>
+  <text x="230" y="288" text-anchor="middle" font-size="13" font-weight="700" fill="#b45309">Présence (mémoire) : { Alice }</text>
+  <text x="230" y="310" text-anchor="middle" font-size="12" fill="#64748b">← Bob n'y figure pas</text>
+
+  <!-- Instance B -->
+  <rect x="600" y="178" width="340" height="150" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="770" y="206" text-anchor="middle" font-size="17" font-weight="700" fill="#1e3a8a">Instance B de l'API</text>
+  <text x="770" y="234" text-anchor="middle" font-size="13" fill="#0f172a">Hub SignalR : connaît seulement</text>
+  <text x="770" y="254" text-anchor="middle" font-size="13" fill="#0f172a">les connexions ouvertes sur B</text>
+  <text x="770" y="288" text-anchor="middle" font-size="13" font-weight="700" fill="#b45309">Présence (mémoire) : { Bob }</text>
+  <text x="770" y="310" text-anchor="middle" font-size="12" fill="#64748b">← Alice n'y figure pas</text>
+
+  <!-- Clients -->
+  <rect x="120" y="420" width="220" height="56" rx="28" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+  <text x="230" y="446" text-anchor="middle" font-size="15" font-weight="700" fill="#14532d">Alice (navigateur)</text>
+  <text x="230" y="465" text-anchor="middle" font-size="12" fill="#14532d">connectée à A</text>
+  <rect x="660" y="420" width="220" height="56" rx="28" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="770" y="446" text-anchor="middle" font-size="15" font-weight="700" fill="#7f1d1d">Bob (navigateur)</text>
+  <text x="770" y="465" text-anchor="middle" font-size="12" fill="#7f1d1d">connecté à B</text>
+
+  <!-- Événement -->
+  <rect x="380" y="214" width="240" height="64" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+  <text x="500" y="238" text-anchor="middle" font-size="13" font-weight="700" fill="#713f12">L'animateur clique « suivant »</text>
+  <text x="500" y="258" text-anchor="middle" font-size="12" fill="#713f12">la requête tombe sur A → QuestionChanged</text>
+
+  <line x1="230" y1="328" x2="230" y2="418" stroke="#16a34a" stroke-width="3" marker-end="url(#ok)"/>
+  <text x="244" y="378" font-size="13" font-weight="700" fill="#15803d">✔ reçoit la question</text>
+
+  <path d="M400,300 C520,330 600,330 640,360 S700,400 740,418" fill="none" stroke="#dc2626" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#ko)"/>
+  <text x="560" y="372" font-size="13" font-weight="700" fill="#b91c1c">✘ A ne sait pas que Bob existe</text>
+  <text x="560" y="392" font-size="13" font-weight="700" fill="#b91c1c">→ Bob ne reçoit jamais la question</text>
+
+  <text x="500" y="506" text-anchor="middle" font-size="12" fill="#64748b">Même problème pour UserJoined/UserLeft, LeaderboardUpdated et la liste des participants renvoyée par JoinSession.</text>
+</svg>
