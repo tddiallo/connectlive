@@ -1,0 +1,121 @@
+name: CI
+
+# Voir docs/CI.md. Postgres, Redis et RabbitMQ réels tournent comme « services » du job : les tests qui les
+# exigent (migrations, backplane SignalR, transport RabbitMQ) ne sont donc jamais ignorés ici.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  SOLUTION: ConnectLive.Core.CI.slnf
+  COVERAGE_THRESHOLD: "80"
+
+jobs:
+  build-and-test:
+    name: Build + tests (Postgres, Redis, RabbitMQ)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: connectlive
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U connectlive"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      rabbitmq:
+        image: rabbitmq:4.1
+        env:
+          # « guest » est refusé hors loopback : on crée un compte dédié.
+          RABBITMQ_DEFAULT_USER: ci
+          RABBITMQ_DEFAULT_PASS: ci-only-password
+        ports: ["5672:5672"]
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+
+    env:
+      CONNECTLIVE_TEST_POSTGRES: Host=localhost;Port=5432;Username=connectlive;Password=ci-only-password
+      CONNECTLIVE_TEST_REDIS: localhost:6379
+      CONNECTLIVE_TEST_RABBITMQ: rabbitmq://localhost:5672
+      CONNECTLIVE_TEST_RABBITMQ_USER: ci
+      CONNECTLIVE_TEST_RABBITMQ_PASSWORD: ci-only-password
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          cache-dependency-path: "**/*.csproj"
+
+      - name: Restore
+        run: dotnet restore $SOLUTION
+
+      - name: Build (warnings are shown, errors fail)
+        run: dotnet build $SOLUTION --no-restore -c Release
+
+      - name: Test with coverage
+        run: >
+          dotnet test $SOLUTION --no-build -c Release
+          --settings coverlet.runsettings
+          --results-directory ./TestResults
+          --logger "trx;LogFileName=results.trx"
+
+      - name: Coverage gate
+        run: |
+          file=$(find TestResults -path '*' -name coverage.cobertura.xml -print0 | xargs -0 ls -S | head -1)
+          rate=$(grep -m1 -oE 'line-rate="[0-9.]+"' "$file" | grep -oE '[0-9.]+')
+          pct=$(awk -v r="$rate" 'BEGIN { printf "%.1f", r * 100 }')
+          echo "Line coverage (largest report): ${pct}% — threshold ${COVERAGE_THRESHOLD}%"
+          echo "### Couverture des lignes : ${pct} % (seuil ${COVERAGE_THRESHOLD} %)" >> "$GITHUB_STEP_SUMMARY"
+          awk -v r="$rate" -v t="$COVERAGE_THRESHOLD" 'BEGIN { exit (r * 100 >= t) ? 0 : 1 }'
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/
+          retention-days: 7
+
+  docker-images:
+    name: Docker images (Core, Notification, Newsletter)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Les Dockerfiles attendent le dépôt dans un sous-dossier « ConnectLive.Core » du contexte de build.
+      - uses: actions/checkout@v4
+        with:
+          path: ConnectLive.Core
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build images (no push)
+        run: |
+          for service in ConnectLive.Core ConnectLive.Notification.Api ConnectLive.Newsletter.Api; do
+            echo "::group::$service"
+            docker buildx build --load -f "ConnectLive.Core/$service/Dockerfile" -t "connectlive/$service:ci" .
+            echo "::endgroup::"
+          done

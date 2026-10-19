@@ -1,0 +1,16 @@
+{
+  "solution": {
+    "path": "ConnectLive.Core.sln",
+    "projects": [
+      "ConnectLive.Application\\ConnectLive.Application.csproj",
+      "ConnectLive.Application.Tests\\ConnectLive.Application.Tests.csproj",
+      "ConnectLive.Core\\ConnectLive.Core.Api.csproj",
+      "ConnectLive.Core.Api.Tests\\ConnectLive.Core.Api.Tests.csproj",
+      "ConnectLive.Domain\\ConnectLive.Domain.csproj",
+      "ConnectLive.Newsletter.Api\\ConnectLive.Newsletter.Api.csproj",
+      "ConnectLive.Notification.Api\\ConnectLive.Notification.Api.csproj",
+      "ConnectLive.Portal.Shared\\ConnectLive.Portal.Shared.csproj",
+      "ConntectLive.DAL\\ConntectLive.DAL.csproj"
+    ]
+  }
+}
