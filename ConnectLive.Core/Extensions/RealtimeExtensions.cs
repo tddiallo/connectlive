@@ -33,7 +33,10 @@ public static class RealtimeExtensions
             services.AddSingleton<ISessionPresenceTracker, RedisSessionPresenceTracker>();
         }
 
-        services.AddSingleton<ISessionNotifier, SignalRSessionNotifier>();
+        // Les handlers reçoivent le décorateur : un échec d'envoi n'annule pas une action déjà persistée
+        services.AddSingleton<SignalRSessionNotifier>();
+        services.AddSingleton<ISessionNotifier>(sp => new ResilientSessionNotifier(
+            sp.GetRequiredService<SignalRSessionNotifier>(), sp.GetRequiredService<ILogger<ResilientSessionNotifier>>()));
         return services;
     }
 }

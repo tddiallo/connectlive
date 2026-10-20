@@ -40,7 +40,7 @@ Légende : ✅ corrigé · ⏳ reste à faire
 | 11 | `LogCritical` + « alerte admin » pour **toutes** les exceptions (404/409 inclus) | ✅ | 4xx → avertissement ; alerte réservée aux 5xx |
 | 12 | Middleware d'exceptions placé après l'authentification | ✅ | Déplacé en tête du pipeline |
 | 13 | `CLAUDE.md` / `ARCHITECTURE.md` périmés | ✅ | Mis à jour |
-| 14 | Tests : 56, aucun test HTTP de bout en bout | ✅ | **139 tests** (dont intégration HTTP `WebApplicationFactory`, et tests sur services réels) |
+| 14 | Tests : 56, aucun test HTTP de bout en bout | ✅ | **145 tests** (dont intégration HTTP `WebApplicationFactory`, et tests sur services réels) |
 
 ### Deuxième vague : infrastructure et industrialisation
 
@@ -53,15 +53,16 @@ Légende : ✅ corrigé · ⏳ reste à faire
 | 19 | Mono-instance : présence en mémoire, pas de backplane SignalR | ✅ | Backplane Redis + présence Redis (`ISessionPresenceTracker`) — [SIGNALR-BACKPLANE-REDIS.md](SIGNALR-BACKPLANE-REDIS.md) |
 | 22 | Code mort | ✅ | Supprimés : 3 × `WeatherForecast`, anciens repositories (`NotImplementedException`), `IArticleUnitOfWork`, `IUnitOfWork<C>`, `IbrahimaException`, modèles de domaine inutilisés, filtre Hangfire, références inutiles à `Workers`/`Proxy`/`WebHosting` |
 | 24 | Pas de CI ni de mesure de couverture | ✅ | GitHub Actions avec Postgres/Redis/RabbitMQ réels, seuil de couverture 80 % (~88 % mesuré), build des images — [CI.md](CI.md) |
+| 18 | Notification SignalR après commit sans filet (échec ⇒ 500 alors que l'état a changé) | ✅ | `ResilientSessionNotifier` journalise l'échec et ne le propage pas ; les clients se resynchronisent via `GET` |
+| 21a | Pas de health checks | ✅ | `/health/live` et `/health/ready` (Postgres, Redis si configuré), sans détail interne (voir `HealthExtensions`, [SIGNALR-BACKPLANE-REDIS.md](SIGNALR-BACKPLANE-REDIS.md)) |
 | 26 | **Nouveau** : le dépôt ne compilait pas seul (dossiers voisins non versionnés) | ✅ | `Core.Api`, `Notification.Api`, `Newsletter.Api` sont autonomes ; filtre de solution `ConnectLive.Core.CI.slnf` |
 
 ### Reste à faire
 
 | # | Constat | Priorité | Piste |
 |---|---|---|---|
-| 18 | Notification SignalR après commit sans filet (échec ⇒ 500 alors que l'état a changé) | Moyenne | Attraper/journaliser l'échec d'envoi ; le client se resynchronise via `GET /Session/{id}` |
 | 20 | Pas de reconnexion/révocation de jeton ; inscription ouverte | Moyenne | Connexion par lien magique/mot de passe ou OIDC — **décision produit requise** ([AUTHENTIFICATION.md](AUTHENTIFICATION.md)) |
-| 21 | Enveloppes de réponse hétérogènes (`Result<T>`, `{error}`, objets bruts) ; pas de ProblemDetails, health checks, versionnage | Moyenne | Normaliser sur ProblemDetails (RFC 9457) pour les erreurs |
+| 21 | Enveloppes de réponse hétérogènes (`Result<T>`, `{error}`, objets bruts) ; pas de ProblemDetails ni de versionnage | Moyenne | Normaliser sur ProblemDetails (RFC 9457) pour les erreurs |
 | 23 | `Nullable` désactivé dans le DAL ; avertissements CS8618 | Basse | Activer progressivement |
 | 25 | Modification/suppression de questions ; bonus de rapidité ; révélation de la bonne réponse ; délai max de réponse | Produit | Voir « Limites » de [QUESTIONS-REPONSES.md](QUESTIONS-REPONSES.md) |
 | 27 | **Nouveau** : publication d'événements « au mieux » (perdus si RabbitMQ est en panne) | Moyenne | Outbox transactionnelle ([MASSTRANSIT-FLUX.md](MASSTRANSIT-FLUX.md), « Limites ») |
@@ -91,9 +92,9 @@ Légende : ✅ corrigé · ⏳ reste à faire
 
 ## Vérification
 
-`dotnet test ConnectLive.Core.CI.slnf` : **139 tests** (12 Application, 127 Core.Api). Mesures faites sur la machine de
+`dotnet test ConnectLive.Core.CI.slnf` : **145 tests** (12 Application, 133 Core.Api). Mesures faites sur la machine de
 développement avec de **vrais** Postgres 16, Redis 7 et RabbitMQ 4.1 (conteneurs Docker) : 0 échec, 0 ignoré, ~88 % de
-couverture de lignes (migrations exclues). Sans ces services, 13 tests sont ignorés (pas en échec). Le dépôt copié seul
+couverture de lignes (migrations exclues). Sans ces services, 10 tests sont ignorés (pas de Redis ni RabbitMQ) ou 13 sans Postgres non plus (pas en échec). Le dépôt copié seul
 dans un dossier vierge (sans dossiers voisins) se compile et passe ses tests.
 
 **Non vérifié** : exécution du workflow sur GitHub, construction des images Docker (réseau vers `mcr.microsoft.com`

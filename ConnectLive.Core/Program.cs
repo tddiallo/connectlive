@@ -66,6 +66,7 @@ builder.Services.AddConnectLiveAuthentication(builder.Configuration);
 
 // Cache distribué (Redis si ConnectionStrings:Redis est défini, sinon mémoire locale)
 builder.Services.AddConnectLiveCaching(builder.Configuration);
+builder.Services.AddConnectLiveHealthChecks(builder.Configuration);
 
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(WatchBehavior<,>));
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CacheBehavior<,>));
@@ -114,6 +115,7 @@ app.UseAuthorization();
 
 
 app.MapControllers();
+app.MapConnectLiveHealthChecks();
 app.MapHub<SessionHub>(SessionHubEvents.HubPath);
 
 if (app.Configuration.GetValue(DatabaseExtensions.MigrateOnStartupKey, app.Environment.IsDevelopment()))

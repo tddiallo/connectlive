@@ -142,6 +142,7 @@ elles sont interchangeables. `RedisPresenceTrackerTests.TwoInstances_ShareTheSam
   rafraîchi périodiquement. Non fait.
 - **Diffusion bavarde** : `LeaderboardUpdated` envoie le classement **complet** à chaque réponse. Pour quelques dizaines
   de joueurs c'est correct ; au-delà, regrouper les envois (ex. toutes les 500 ms).
+- **Un échec d'envoi n'annule pas l'action** : `ResilientSessionNotifier` journalise l'erreur et laisse la requête réussir.
 - **Pas de garantie de livraison** : Redis Pub/Sub est « tire et oublie ». Un client déconnecté au mauvais moment rate
   le message ; il se resynchronise avec `GET /Session/{id}` et `GET /Session/{id}/leaderboard`.
 - Le backplane n'est pas testé en charge ; seul le comportement fonctionnel est vérifié.
@@ -156,3 +157,9 @@ elles sont interchangeables. `RedisPresenceTrackerTests.TwoInstances_ShareTheSam
 | `ConnectLive.Core/Realtime/RedisSessionPresenceTracker.cs` | implémentation Redis |
 | `ConnectLive.Core.Api.Tests/Realtime/*` | contrat + tests mémoire/Redis |
 | `ConnectLive.Core.Api.Tests/Integration/SignalRBackplaneTests.cs` | deux instances + Redis réel |
+
+## Sondes de santé
+
+`GET /health/live` (le process répond) et `GET /health/ready` (Postgres, et Redis s'il est configuré) sont publiques et
+ne renvoient que `Healthy` / `Unhealthy`. À brancher sur les sondes *liveness*/*readiness* de l'orchestrateur : une
+instance dont Redis est injoignable doit sortir du répartiteur de charge.
