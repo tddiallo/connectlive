@@ -40,7 +40,7 @@ Légende : ✅ corrigé · ⏳ reste à faire
 | 11 | `LogCritical` + « alerte admin » pour **toutes** les exceptions (404/409 inclus) | ✅ | 4xx → avertissement ; alerte réservée aux 5xx |
 | 12 | Middleware d'exceptions placé après l'authentification | ✅ | Déplacé en tête du pipeline |
 | 13 | `CLAUDE.md` / `ARCHITECTURE.md` périmés | ✅ | Mis à jour |
-| 14 | Tests : 56, aucun test HTTP de bout en bout | ✅ | **145 tests** (dont intégration HTTP `WebApplicationFactory`, et tests sur services réels) |
+| 14 | Tests : 56, aucun test HTTP de bout en bout | ✅ | **148 tests** (dont intégration HTTP `WebApplicationFactory`, et tests sur services réels) |
 
 ### Deuxième vague : infrastructure et industrialisation
 
@@ -69,7 +69,8 @@ Légende : ✅ corrigé · ⏳ reste à faire
 | 27 | **Nouveau** : publication d'événements « au mieux » (perdus si RabbitMQ est en panne) | Moyenne | Outbox transactionnelle ([MASSTRANSIT-FLUX.md](MASSTRANSIT-FLUX.md), « Limites ») |
 | 28 | **Nouveau** : fantômes de présence si une instance est tuée (expiration 12 h) | Basse | Heartbeat par instance ou TTL court rafraîchi |
 | 29 | **Nouveau** : sessions collantes (sticky) ou WebSockets seuls à configurer sur le répartiteur de charge | À faire au déploiement | [SIGNALR-BACKPLANE-REDIS.md](SIGNALR-BACKPLANE-REDIS.md) |
-| 30 | Images Docker et workflow GitHub non vérifiés | ✅ | Premier run GitHub : 2 défauts trouvés et corrigés, puis vert (145 tests, 90 % de couverture, 3 images) — [CI.md](CI.md) |
+| 30 | Images Docker et workflow GitHub non vérifiés | ✅ | Premier run GitHub : 2 défauts trouvés et corrigés, puis vert (148 tests, 90 % de couverture, 3 images) — [CI.md](CI.md) |
+| 32 | **Nouveau** : clé étrangère `questions → users` mal mappée (colonne fantôme `UserEntityId`, `UserId` sans contrainte) | Moyenne | Déclarer la relation dans `OnModelCreating`, migration, adapter les jeux de test ([GUIDE-ARCHITECTURE.md](GUIDE-ARCHITECTURE.md), §21) |
 | 31 | Pas d'analyse de vulnérabilités | ✅ (dépendances) | 9 paquets transitifs vulnérables corrigés, contrôle en CI, Dependabot — [SECURITE-DEPENDANCES.md](SECURITE-DEPENDANCES.md). Reste : scan des images Docker (Trivy) et CD |
 
 ## Changements cassants à connaître (clients / SPA / déploiement)
@@ -93,12 +94,12 @@ Légende : ✅ corrigé · ⏳ reste à faire
 
 ## Vérification
 
-`dotnet test ConnectLive.Core.CI.slnf` : **145 tests** (12 Application, 133 Core.Api). Mesures faites sur la machine de
+`dotnet test ConnectLive.Core.CI.slnf` : **148 tests** (15 Application, 133 Core.Api). Mesures faites sur la machine de
 développement avec de **vrais** Postgres 16, Redis 7 et RabbitMQ 4.1 (conteneurs Docker) : 0 échec, 0 ignoré, ~88 % de
 couverture de lignes (migrations exclues). Sans ces services, 10 tests sont ignorés (pas de Redis ni RabbitMQ) ou 13 sans Postgres non plus (pas en échec). Le dépôt copié seul
 dans un dossier vierge (sans dossiers voisins) se compile et passe ses tests.
 
-La CI GitHub est verte depuis le 2026-10-20 (145 tests sans aucun ignoré, couverture 90 %, 3 images Docker construites),
+La CI GitHub est verte depuis le 2026-10-20 (148 tests sans aucun ignoré, couverture 90 %, 3 images Docker construites),
 après correction de deux défauts qu'elle a révélés.
 
 **Non vérifié** : consommation de la file d'erreurs `users.service_error`, comportement du backplane sous charge,

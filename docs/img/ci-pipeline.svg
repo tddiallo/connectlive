@@ -38,7 +38,7 @@
   <text x="436" y="280" text-anchor="middle" font-size="12" fill="#475569">projets</text>
   <rect x="516" y="214" width="140" height="86" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
   <text x="586" y="240" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">3 Tests</text>
-  <text x="586" y="262" text-anchor="middle" font-size="12" fill="#475569">145 tests, aucun</text>
+  <text x="586" y="262" text-anchor="middle" font-size="12" fill="#475569">148 tests, aucun</text>
   <text x="586" y="280" text-anchor="middle" font-size="12" fill="#475569">ignoré en CI</text>
   <rect x="676" y="214" width="140" height="86" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
   <text x="746" y="240" text-anchor="middle" font-size="14" font-weight="700" fill="#14532d">4 Couverture</text>

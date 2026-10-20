@@ -99,7 +99,7 @@ flowchart LR
 - Cache distribué avec **Redis**
 - Sessions de quiz en **temps réel** ✅ : hub SignalR ([docs/SIGNALR-REALTIME.md](docs/SIGNALR-REALTIME.md)), cycle de vie des sessions ([docs/SESSIONS.md](docs/SESSIONS.md)), questions, réponses des joueurs et classement ([docs/QUESTIONS-REPONSES.md](docs/QUESTIONS-REPONSES.md))
 - Authentification JWT ✅ ([docs/AUTHENTIFICATION.md](docs/AUTHENTIFICATION.md)) — reste : connexion/reconnexion et révocation
-- Tests automatisés ✅ (145 tests, intégration HTTP + services réels) et CI GitHub Actions ✅ ([docs/CI.md](docs/CI.md)) — reste : CD
+- Tests automatisés ✅ (148 tests, intégration HTTP + services réels) et CI GitHub Actions ✅ ([docs/CI.md](docs/CI.md)) — reste : CD
 - Voir le suivi complet des constats d'audit dans [docs/AUDIT-360.md](docs/AUDIT-360.md)
 
 ---

@@ -77,7 +77,7 @@ Sans ces variables, les tests concernés sont **ignorés** (pas en échec) : `do
 
 - **Premier run sur GitHub (2026-10-20)** : il a révélé deux défauts invisibles en local, corrigés au run suivant :
   une chaîne de connexion Postgres sans base précisée (Npgsql visait une base du nom de l'utilisateur) et des tags
-  d'image Docker avec majuscules. Résultat du run vert : 145 tests sans aucun ignoré, couverture 90 %, 3 images construites.
+  d'image Docker avec majuscules. Résultat du run vert : 148 tests sans aucun ignoré, couverture 90 %, 3 images construites.
 - Avertissements restants dans le journal : actions GitHub encore sur Node 20 (migration forcée vers Node 24) et passage
   d'`ubuntu-latest` à Ubuntu 26 ; surveiller les montées de version des actions.
 - Le seuil de couverture lit le plus gros rapport `cobertura` (celui de `Core.Api.Tests`) ; ajouter un projet de tests

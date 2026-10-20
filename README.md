@@ -25,6 +25,7 @@ Avec Visual Studio : ouvrir `ConnectLive.Core.sln` et choisir un profil multi-pr
 
 | Document | Contenu |
 |---|---|
+| **[docs/GUIDE-ARCHITECTURE.md](docs/GUIDE-ARCHITECTURE.md)** | **Commencer ici** : architecture, DI, bibliothèques, communications, services, décisions |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Vue d'ensemble, couches, état des fonctionnalités |
 | [docs/DEVELOPPEMENT-VISUAL-STUDIO.md](docs/DEVELOPPEMENT-VISUAL-STUDIO.md) | Profils de démarrage multi-projet, dépendances Docker, dépannage |
 | [docs/AUDIT-360.md](docs/AUDIT-360.md) | Audit 360° : constats, ce qui est corrigé, ce qui reste, changements cassants |
