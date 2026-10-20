@@ -30,7 +30,7 @@ s += client(550, 'swagger', 'Swagger UI', 'OpenAPI · test des routes');
 s += arrow(110, 342, 110, 398, { color: C.blue, id: 'arrBlue' });
 s += text(126, 376, 'REST · JWT', { size: 21, fill: C.blue, weight: 600 });
 s += arrow(330, 342, 330, 398, { color: C.green, id: 'arrGreen' });
-s += text(346, 376, 'WebSocket · SignalR', { size: 21, fill: C.green, weight: 600 });
+s += text(346, 376, 'WS · SignalR', { size: 21, fill: C.green, weight: 600 });
 s += arrow(620, 342, 620, 398, { color: C.blue, id: 'arrBlue' });
 s += text(604, 376, 'REST · JWT', { size: 21, fill: C.blue, weight: 600, anchor: 'end' });
 
@@ -94,8 +94,8 @@ s += q(805, null, 'xUnit', '148 tests · 90 % couv.');
 // ── Pied
 s += rect(40, 1226, 1000, 84, { fill: '#0f1830', stroke: C.line, r: 14 });
 s += text(60, 1264, 'Tidiane Diallo · Développeur .NET', { size: 26, weight: 800 });
-s += text(60, 1296, 'github.com/tddiallo/connectlive', { size: 22, fill: C.blue, weight: 600 });
-s += text(1020, 1284, 'repo public', { size: 22, fill: C.mute, anchor: 'end', weight: 600 });
+s += text(60, 1296, 'Architecture backend · projet personnel', { size: 22, fill: C.blue, weight: 600 });
+s += text(1020, 1284, '.NET 8 · PostgreSQL · Redis · RabbitMQ', { size: 22, fill: C.mute, anchor: 'end', weight: 600 });
 
 const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'linkedin-architecture.svg');
 writeFileSync(out, svgDocument(W, H, s));
