@@ -19,7 +19,7 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             return;
 
         _databaseName = $"connectlive_test_{Guid.NewGuid():N}";
-        await using var admin = new NpgsqlConnection(server);
+        await using var admin = new NpgsqlConnection(AdminConnectionString(server));
         await admin.OpenAsync();
         await using (var create = new NpgsqlCommand($"CREATE DATABASE \"{_databaseName}\"", admin))
             await create.ExecuteNonQueryAsync();
@@ -33,10 +33,19 @@ public sealed class PostgresMigrationTests : IAsyncLifetime
             return;
 
         NpgsqlConnection.ClearAllPools();
-        await using var admin = new NpgsqlConnection(server);
+        await using var admin = new NpgsqlConnection(AdminConnectionString(server));
         await admin.OpenAsync();
         await using var drop = new NpgsqlCommand($"DROP DATABASE IF EXISTS \"{_databaseName}\" WITH (FORCE)", admin);
         await drop.ExecuteNonQueryAsync();
+    }
+
+    /// <summary>Connexion « administrateur » : sans base précisée, Npgsql viserait une base du nom de l'utilisateur, qui peut ne pas exister.</summary>
+    private static string AdminConnectionString(string server)
+    {
+        var builder = new NpgsqlConnectionStringBuilder(server);
+        if (string.IsNullOrEmpty(builder.Database))
+            builder.Database = "postgres";
+        return builder.ConnectionString;
     }
 
     private ApplicationDbContext NewContext() =>
