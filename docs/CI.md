@@ -75,13 +75,11 @@ Sans ces variables, les tests concernés sont **ignorés** (pas en échec) : `do
 
 ## Limites connues
 
-- Le workflow **n'a pas encore tourné sur GitHub**. Ce qui a été vérifié localement : son YAML est syntaxiquement
-  valide (analysé avec YamlDotNet) ; le `.slnf` se restaure, compile et passe ses tests **dans un dossier vierge sans
-  aucun dépôt voisin** ; les tests passent avec de vrais Postgres, Redis et RabbitMQ ; la couverture mesurée est ~88 %.
-  Ce qui **n'a pas pu être vérifié** : le respect du schéma GitHub Actions (noms de clés, versions d'actions) et la
-  **construction des images Docker** (le réseau de la machine de développement n'atteignait pas `mcr.microsoft.com`
-  pendant l'essai). Le job `docker-images` est donc le plus susceptible d'échouer au premier run ; les Dockerfiles
-  ont été nettoyés de leurs `COPY` vers les dossiers voisins, mais cela reste à confirmer.
+- **Premier run sur GitHub (2026-10-20)** : il a révélé deux défauts invisibles en local, corrigés au run suivant :
+  une chaîne de connexion Postgres sans base précisée (Npgsql visait une base du nom de l'utilisateur) et des tags
+  d'image Docker avec majuscules. Résultat du run vert : 145 tests sans aucun ignoré, couverture 90 %, 3 images construites.
+- Avertissements restants dans le journal : actions GitHub encore sur Node 20 (migration forcée vers Node 24) et passage
+  d'`ubuntu-latest` à Ubuntu 26 ; surveiller les montées de version des actions.
 - Le seuil de couverture lit le plus gros rapport `cobertura` (celui de `Core.Api.Tests`) ; ajouter un projet de tests
   important demandera d'ajuster cette étape.
 - Pas de déploiement (CD) : la CI s'arrête à la construction des images, sans les publier.

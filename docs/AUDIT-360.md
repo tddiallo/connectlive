@@ -68,7 +68,7 @@ Légende : ✅ corrigé · ⏳ reste à faire
 | 27 | **Nouveau** : publication d'événements « au mieux » (perdus si RabbitMQ est en panne) | Moyenne | Outbox transactionnelle ([MASSTRANSIT-FLUX.md](MASSTRANSIT-FLUX.md), « Limites ») |
 | 28 | **Nouveau** : fantômes de présence si une instance est tuée (expiration 12 h) | Basse | Heartbeat par instance ou TTL court rafraîchi |
 | 29 | **Nouveau** : sessions collantes (sticky) ou WebSockets seuls à configurer sur le répartiteur de charge | À faire au déploiement | [SIGNALR-BACKPLANE-REDIS.md](SIGNALR-BACKPLANE-REDIS.md) |
-| 30 | **Nouveau** : images Docker non vérifiées dans cet environnement ; workflow GitHub jamais exécuté | À confirmer | Premier run de la CI ([CI.md](CI.md), « Limites ») |
+| 30 | Images Docker et workflow GitHub non vérifiés | ✅ | Premier run GitHub : 2 défauts trouvés et corrigés, puis vert (145 tests, 90 % de couverture, 3 images) — [CI.md](CI.md) |
 | 31 | **Nouveau** : pas de CD, pas d'analyse de vulnérabilités (dépendances, images) | Basse | Dependabot, `dotnet list package --vulnerable`, Trivy |
 
 ## Changements cassants à connaître (clients / SPA / déploiement)
@@ -97,6 +97,8 @@ développement avec de **vrais** Postgres 16, Redis 7 et RabbitMQ 4.1 (conteneur
 couverture de lignes (migrations exclues). Sans ces services, 10 tests sont ignorés (pas de Redis ni RabbitMQ) ou 13 sans Postgres non plus (pas en échec). Le dépôt copié seul
 dans un dossier vierge (sans dossiers voisins) se compile et passe ses tests.
 
-**Non vérifié** : exécution du workflow sur GitHub, construction des images Docker (réseau vers `mcr.microsoft.com`
-indisponible pendant l'essai), consommation de la file d'erreurs `users.service_error`, comportement du backplane sous
-charge, déploiement derrière un répartiteur de charge réel.
+La CI GitHub est verte depuis le 2026-10-20 (145 tests sans aucun ignoré, couverture 90 %, 3 images Docker construites),
+après correction de deux défauts qu'elle a révélés.
+
+**Non vérifié** : consommation de la file d'erreurs `users.service_error`, comportement du backplane sous charge,
+déploiement derrière un répartiteur de charge réel.
