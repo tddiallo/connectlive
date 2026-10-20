@@ -22,4 +22,10 @@
     <ProjectReference Include="..\ConnectLive.Domain\ConnectLive.Domain.csproj" />
   </ItemGroup>
 
+  <!-- Versions corrigées de dépendances transitives vulnérables (voir docs/SECURITE-DEPENDANCES.md) -->
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="System.Text.Encodings.Web" Version="8.0.0" />
+  </ItemGroup>
+
 </Project>

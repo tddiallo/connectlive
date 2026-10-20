@@ -69,7 +69,7 @@ Légende : ✅ corrigé · ⏳ reste à faire
 | 28 | **Nouveau** : fantômes de présence si une instance est tuée (expiration 12 h) | Basse | Heartbeat par instance ou TTL court rafraîchi |
 | 29 | **Nouveau** : sessions collantes (sticky) ou WebSockets seuls à configurer sur le répartiteur de charge | À faire au déploiement | [SIGNALR-BACKPLANE-REDIS.md](SIGNALR-BACKPLANE-REDIS.md) |
 | 30 | Images Docker et workflow GitHub non vérifiés | ✅ | Premier run GitHub : 2 défauts trouvés et corrigés, puis vert (145 tests, 90 % de couverture, 3 images) — [CI.md](CI.md) |
-| 31 | **Nouveau** : pas de CD, pas d'analyse de vulnérabilités (dépendances, images) | Basse | Dependabot, `dotnet list package --vulnerable`, Trivy |
+| 31 | Pas d'analyse de vulnérabilités | ✅ (dépendances) | 9 paquets transitifs vulnérables corrigés, contrôle en CI, Dependabot — [SECURITE-DEPENDANCES.md](SECURITE-DEPENDANCES.md). Reste : scan des images Docker (Trivy) et CD |
 
 ## Changements cassants à connaître (clients / SPA / déploiement)
 

@@ -19,4 +19,10 @@
   <ItemGroup>
   </ItemGroup>
 
+  <!-- Versions corrigées de dépendances transitives vulnérables (voir docs/SECURITE-DEPENDANCES.md) -->
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Npgsql" Version="6.0.11" />
+  </ItemGroup>
+
 </Project>

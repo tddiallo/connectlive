@@ -34,6 +34,7 @@ Avec Visual Studio : ouvrir `ConnectLive.Core.sln` et choisir un profil multi-pr
 | [docs/POSTGRES-DOCKER.md](docs/POSTGRES-DOCKER.md) | Pourquoi Postgres partout, démarrage Docker, migrations, dépannage |
 | [docs/MASSTRANSIT-FLUX.md](docs/MASSTRANSIT-FLUX.md) | Comment les messages circulent (MassTransit + RabbitMQ), avec schéma |
 | [docs/SIGNALR-BACKPLANE-REDIS.md](docs/SIGNALR-BACKPLANE-REDIS.md) | Plusieurs instances SignalR : backplane Redis, présence partagée, schémas |
+| [docs/SECURITE-DEPENDANCES.md](docs/SECURITE-DEPENDANCES.md) | Paquets vulnérables trouvés et corrigés, contrôle en CI, Dependabot |
 | [docs/CI.md](docs/CI.md) | Pipeline GitHub Actions, services de test, couverture, reproduction locale |
 | [docs/REDIS-CACHE.md](docs/REDIS-CACHE.md) | Cache distribué des requêtes MediatR |
 | [docs/SIGNALR-REALTIME.md](docs/SIGNALR-REALTIME.md) | Hub de sessions temps réel et contrat client |

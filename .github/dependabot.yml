@@ -1,0 +1,15 @@
+# Mises à jour automatiques sous forme de pull requests (voir docs/SECURITE-DEPENDANCES.md).
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      microsoft-and-ef:
+        patterns: ["Microsoft.*", "Npgsql*", "System.*"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

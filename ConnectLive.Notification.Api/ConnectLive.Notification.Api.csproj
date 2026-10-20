@@ -28,4 +28,11 @@
     <ProjectReference Include="..\ConnectLive.Domain\ConnectLive.Domain.csproj" />
   </ItemGroup>
 
+  <!-- Versions corrigées de dépendances transitives vulnérables (voir docs/SECURITE-DEPENDANCES.md) -->
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Npgsql" Version="6.0.11" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
 </Project>

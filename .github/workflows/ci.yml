@@ -62,9 +62,9 @@ jobs:
       CONNECTLIVE_TEST_RABBITMQ_PASSWORD: ci-only-password
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
           cache: true
@@ -72,6 +72,14 @@ jobs:
 
       - name: Restore
         run: dotnet restore $SOLUTION
+
+      - name: Vulnerable dependencies (direct and transitive)
+        run: |
+          dotnet list $SOLUTION package --vulnerable --include-transitive 2>&1 | tee vulnerabilities.txt
+          if grep -q "has the following vulnerable packages" vulnerabilities.txt; then
+            echo "::error::Vulnerable NuGet packages found (see log). Bump them or pin a patched version."
+            exit 1
+          fi
 
       - name: Build (warnings are shown, errors fail)
         run: dotnet build $SOLUTION --no-restore -c Release
@@ -94,7 +102,7 @@ jobs:
 
       - name: Upload results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: TestResults/
@@ -106,11 +114,11 @@ jobs:
     timeout-minutes: 20
     steps:
       # Les Dockerfiles attendent le dépôt dans un sous-dossier « ConnectLive.Core » du contexte de build.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: ConnectLive.Core
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - name: Build images (no push)
         run: |
