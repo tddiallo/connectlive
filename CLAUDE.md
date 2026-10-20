@@ -125,7 +125,7 @@ host bootstrap behavior, check all three.
 Full status in `docs/AUDIT-360.md`. Notable open items:
 - `SendExceptionToAdmin` only logs at Critical level (no real alerting), and only for 5xx.
 - `Result<T>` is used by Session/Question controllers but `UserController` and `LeaderBoardController` still return raw
-  `Ok(...)`; error bodies are `{ "error": "..." }`, not ProblemDetails.
+  `Ok(...)`. Errors are RFC 9457 problem details (`application/problem+json`: type/title/status/detail/traceId) with the legacy `error` field kept for old clients.
 - `LeaderBoardController` is a stub (the real leaderboard is `GET /Session/{id}/leaderboard`).
 - No token re-issue/revocation (a lost JWT cannot be recovered); no transactional outbox for bus events.
 - Presence entries of a crashed API instance linger in Redis until their 12 h expiry.

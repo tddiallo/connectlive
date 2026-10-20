@@ -62,7 +62,8 @@ Légende : ✅ corrigé · ⏳ reste à faire
 | # | Constat | Priorité | Piste |
 |---|---|---|---|
 | 20 | Pas de reconnexion/révocation de jeton ; inscription ouverte | Moyenne | Connexion par lien magique/mot de passe ou OIDC — **décision produit requise** ([AUTHENTIFICATION.md](AUTHENTIFICATION.md)) |
-| 21 | Enveloppes de réponse hétérogènes (`Result<T>`, `{error}`, objets bruts) ; pas de ProblemDetails ni de versionnage | Moyenne | Normaliser sur ProblemDetails (RFC 9457) pour les erreurs |
+| 21 | Succès hétérogènes (`Result<T>` ou objets bruts) ; pas de versionnage d'API | Moyenne | Uniformiser les réponses de succès ; versionner avant de publier l'API à des tiers |
+| 21b | Erreurs : formats multiples (`{error}`, validation ASP.NET) | ✅ | Toutes les erreurs sont des problem details RFC 9457 (champ `error` conservé) |
 | 23 | `Nullable` désactivé dans le DAL ; avertissements CS8618 | Basse | Activer progressivement |
 | 25 | Modification/suppression de questions ; bonus de rapidité ; révélation de la bonne réponse ; délai max de réponse | Produit | Voir « Limites » de [QUESTIONS-REPONSES.md](QUESTIONS-REPONSES.md) |
 | 27 | **Nouveau** : publication d'événements « au mieux » (perdus si RabbitMQ est en panne) | Moyenne | Outbox transactionnelle ([MASSTRANSIT-FLUX.md](MASSTRANSIT-FLUX.md), « Limites ») |

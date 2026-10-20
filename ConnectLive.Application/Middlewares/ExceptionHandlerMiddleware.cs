@@ -66,10 +66,42 @@ public class ExceptionHandlerMiddleware
             ? exception.InnerException?.Message ?? exception.Message
             : "An unexpected error occurred.";
 
-        context.Response.ContentType = "application/json";
+        // RFC 9457 (problem details) ; « error » est conservé pour les clients qui lisaient l'ancien format { "error": "..." }
+        var problem = new
+        {
+            type = ProblemTypeFor(code),
+            title = TitleFor(code),
+            status = (int)code,
+            detail = message,
+            traceId = context.TraceIdentifier,
+            error = message
+        };
+
+        context.Response.ContentType = "application/problem+json";
         context.Response.StatusCode = (int)code;
-        await context.Response.WriteAsync(JsonSerializer.Serialize(new { error = message }));
+        await context.Response.WriteAsync(JsonSerializer.Serialize(problem));
     }
+
+    private static string TitleFor(HttpStatusCode code) => code switch
+    {
+        HttpStatusCode.BadRequest => "Bad Request",
+        HttpStatusCode.Unauthorized => "Unauthorized",
+        HttpStatusCode.Forbidden => "Forbidden",
+        HttpStatusCode.NotFound => "Not Found",
+        HttpStatusCode.Conflict => "Conflict",
+        _ => "An error occurred while processing your request."
+    };
+
+    /// <summary>Liens vers la définition du code HTTP dans la RFC 9110, comme le fait ASP.NET Core.</summary>
+    private static string ProblemTypeFor(HttpStatusCode code) => code switch
+    {
+        HttpStatusCode.BadRequest => "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+        HttpStatusCode.Unauthorized => "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+        HttpStatusCode.Forbidden => "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+        HttpStatusCode.NotFound => "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+        HttpStatusCode.Conflict => "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+        _ => "https://tools.ietf.org/html/rfc9110#section-15.6.1"
+    };
 
     private Task SendExceptionToAdmin(Exception exception)
     {

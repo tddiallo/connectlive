@@ -45,7 +45,7 @@ Une transition invalide lève `ConflictException` → **HTTP 409**. Les règles 
 ## API
 
 Les succès utilisent l'enveloppe `Result<T>` (`successed`, `data`, `messages`). Les erreurs sont renvoyées par
-`ExceptionHandlerMiddleware` sous la forme `{ "error": "…" }` avec le code HTTP correspondant (le message métier est
+`ExceptionHandlerMiddleware` sous forme de **problem details** (RFC 9457, `application/problem+json` : `type`, `title`, `status`, `detail`, `traceId`, plus l'ancien champ `error` conservé pour compatibilité) avec le code HTTP correspondant (le message métier est
 conservé pour les 4xx ; les 500 restent opaques hors Development).
 
 | Verbe & route | Rôle | Erreurs |

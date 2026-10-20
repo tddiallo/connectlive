@@ -54,3 +54,53 @@ public class ExceptionHandlerMiddlewareTests
         Assert.Equal(1, CountLogs(LogLevel.Critical));
     }
 }
+
+public class ExceptionHandlerProblemDetailsTests
+{
+    private static async Task<(DefaultHttpContext Context, System.Text.Json.JsonElement Body)> Invoke(Exception exception, string environment = "Production")
+    {
+        var env = NSubstitute.Substitute.For<Microsoft.Extensions.Hosting.IHostEnvironment>();
+        env.EnvironmentName.Returns(environment);
+        var context = new DefaultHttpContext { TraceIdentifier = "trace-123" };
+        context.Response.Body = new MemoryStream();
+        var logger = NSubstitute.Substitute.For<Microsoft.Extensions.Logging.ILogger<ConnectLive.Application.Middlewares.ExceptionHandlerMiddleware>>();
+
+        await new ConnectLive.Application.Middlewares.ExceptionHandlerMiddleware(logger, _ => throw exception, env).InvokeAsync(context);
+
+        context.Response.Body.Position = 0;
+        using var doc = System.Text.Json.JsonDocument.Parse(await new StreamReader(context.Response.Body).ReadToEndAsync());
+        return (context, doc.RootElement.Clone());
+    }
+
+    [Fact]
+    public async Task Errors_AreProblemDetails_WithStatusTitleDetailAndTraceId()
+    {
+        var (context, body) = await Invoke(new ConnectLive.Domain.Exceptions.ConflictException("already exists"));
+
+        Assert.StartsWith("application/problem+json", context.Response.ContentType);
+        Assert.Equal(409, body.GetProperty("status").GetInt32());
+        Assert.Equal("Conflict", body.GetProperty("title").GetString());
+        Assert.Equal("already exists", body.GetProperty("detail").GetString());
+        Assert.Equal("trace-123", body.GetProperty("traceId").GetString());
+        Assert.StartsWith("https://", body.GetProperty("type").GetString());
+    }
+
+    [Fact]
+    public async Task LegacyErrorField_IsKept_ForExistingClients()
+    {
+        var (_, body) = await Invoke(new KeyNotFoundException("nope"));
+
+        Assert.Equal("nope", body.GetProperty("error").GetString());
+        Assert.Equal(404, body.GetProperty("status").GetInt32());
+    }
+
+    [Fact]
+    public async Task ServerErrors_HideInternals_OutsideDevelopment()
+    {
+        var (_, body) = await Invoke(new InvalidOperationException("connection string password=hunter2"));
+
+        Assert.Equal(500, body.GetProperty("status").GetInt32());
+        Assert.DoesNotContain("hunter2", body.GetRawText());
+        Assert.Equal("An unexpected error occurred.", body.GetProperty("detail").GetString());
+    }
+}
