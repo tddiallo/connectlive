@@ -12,7 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Hangfire" Version="1.8.6" />
     <PackageReference Include="Hangfire.PostgreSql" Version="1.20.4" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
@@ -22,7 +22,7 @@
   <!-- Versions corrigées de dépendances transitives vulnérables (voir docs/SECURITE-DEPENDANCES.md) -->
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="Npgsql" Version="6.0.11" />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
   </ItemGroup>
 
 </Project>
